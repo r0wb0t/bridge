@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<form method=post>
+<table>
+<tr><td>Name</td><td><input name=name></td></tr>
+<tr><td>Address</td><td><input name=address></td></tr>
+<tr><td>Geo Location</td><td><input name=location></td></tr>
+<tr><td>Phones</td><td><textarea name=phones></textarea></td></tr>
+<tr><td>Website</td><td><input name=website></td></tr>
+
+{% for meal in ['Breakfast','Lunch','Snack','Dinner'] %}
+<tr><td>{{ meal }}</td><td>
+  <table>
+    <tr><td>Days</td><td>
+      {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
+      <label><input type=checkbox name={{ meal.lower() }}_days_{{ day.lower() }}> {{ day }}</label>
+      {% endfor %}
+    </td></tr>
+    <tr><td>Times</td><td>
+      <select name={{ meal.lower() }}_start>
+      {% for hour in range(24) %}
+        <option value={{ hour }}>{{ hour }}:00
+      {% endfor %}
+      </select>
+      -
+      <select name={{ meal.lower() }}_end>
+      {% for hour in range(24) %}
+        <option value={{ hour }}>{{ hour }}:00
+      {% endfor %}
+      </select>
+    </td></tr>
+    <tr><td>Menu</td><td><textarea name={{ meal.lower() }}_menu></textarea></td></tr>
+  </table>
+</td></tr>
+{% endfor %}
+
+<tr><td>Wheelchair Access</td><td><input type=checkbox name=accessible></td></tr>
+<tr><td>Requires Ticket</td><td><input type=checkbox name=requires_ticket></td></tr>
+<tr><td>Requires Local Address</td><td><input type=checkbox name=requires_local_addr></td></tr>
+<tr><td>Requires Church Attendence</td><td><input type=checkbox name=requires_church_attend></td></tr>
+
+</table>
+<input type=submit>
+</form>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Results{% endblock %}
+{% block scripts %}
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBPLQNqjHF0Y_u8yAwmSZInEIJoWnlgFu8&sensor=false">
+</script>
+
+{% endblock %}
+{% block header %}
+
+<a href="/">&lt; Start Over</a>
+
+{% endblock %}
+{% block content %}
+
+<h1>Food</h1>
+
+<ul class="options">
+{% for option in options %}
+  <li><a href="{{ option.get_query_url() }}">{{ option.criterion.title }}</a>:
+      {{ option.desc_value() }}
+{% endfor %}
+</ul>
+
+<ul class="results">
+{% for result in results %}
+  <li>
+  <div class="map" data-location="{{ result.location.lat }},{{ result.location.lon }}"></div>
+  <div class="contact">
+    <h2>{{ result.name }}</h2>
+
+    {% if result.website %} - <span class="website">{{ result.website }}</span>{% endif %}
+
+    {% if result.address %} - <span class="address">{{ result.address }}</span>{% endif %}
+  </div>
+  <div class="meals">
+    {% macro renderMeal(name, meal) -%}
+      {% if meal.days %}
+        <div class="meal">
+        <h3>{{ name }}</h3>
+        {{ meal.start }} - {{ meal.end }},
+        {% for day in meal.days %}
+          <span>
+          {{ ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day] }}
+          </span>
+        {% endfor %}
+        <ul>
+        {% for item in meal.menu %}
+          <li>{{ item }}
+        {% endfor %}
+        <ul>
+        </div>
+      {% endif %}
+    {%- endmacro %}
+
+    {{ renderMeal('Breakfast', result.breakfast) }}
+    {{ renderMeal('Lunch', result.lunch) }}
+    {{ renderMeal('Snack', result.snack) }}
+    {{ renderMeal('Dinner', result.dinner) }}
+  </div>
+  <div class="props">
+    <ul>
+      {% if result.accessible %}<li>Wheelchair Access{% endif %}
+      {% if result.requires_ticket %}<li>Requires Ticket{% endif %}
+      {% if result.requires_local_addr %}<li>Requires Local Address{% endif %}
+      {% if result.requires_church_attend %}<li>Requires Church Attendence{% endif %}
+    </ul>
+  </div>
+
+  <br clear=both>
+{% else %}
+  <li>No results 
+{% endfor %}
+</ul>
+
+<script>
+
+function parseLatLng(attr) {
+  var pair = attr.split(',');
+  if (pair.length != 2) return;
+  var lat = parseFloat(pair[0]);
+  if (isNaN(lat)) return;
+  var lng = parseFloat(pair[1]);
+  if (isNaN(lng)) return;
+  return new google.maps.LatLng(lat, lng);
+}
+
+var maps = document.getElementsByClassName('map');
+for (var i = 0; i < maps.length; i++) {
+  var dest = parseLatLng(maps[i].dataset.location);
+  if (!dest) continue;
+  
+  var map = new google.maps.Map(maps[i], {
+    center: dest,
+    zoom: 15,
+    disableDefaultUI: true,
+    draggable: false,
+    disableDoubleClickZoom: true
+  });
+  new google.maps.Marker({
+    map: map,
+    clickable: false,
+    position: dest
+  });
+}
+
+</script>
+
+{% endblock %}
+

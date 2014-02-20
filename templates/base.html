@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+<head>
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="stylesheet" type="text/css" href="/_/s/base.css">
+  {% block scripts %}{% endblock %}
+</head>
+<body>
+<div class="header">
+bridge
+{% block header %}{% endblock %}
+</div>
+<div class="content">
+{% block content %}{% endblock %}
+</div>
+</body>
+</html>

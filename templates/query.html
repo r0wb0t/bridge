@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Query{% endblock %}
+{% block content %}
+
+<h1>Query</h1>
+
+<form>
+{% for name, value in other_args.iteritems() %}
+  <input type=hidden name="{{ name }}" value="{{ value }}">
+{% endfor %}
+{% include criterion.template %}
+</form>
+
+{% endblock %}
+
