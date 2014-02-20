@@ -61,11 +61,10 @@ class LocationCriterion(Criterion):
   
 
 class YesNoCriterion(Criterion):
-  def __init__(self, slug, title, yes_desc, no_desc, question, arg, bool_prop):
+  def __init__(self, slug, title, yes_desc, no_desc, question, bool_prop):
     super(YesNoCriterion, self).__init__(
-        slug, title, ['%s_%s' % (arg, val) for val in ('yes','no')], 'yesno.html')
-    self.arg = arg
-    self.yes_arg = '%s_yes' % self.arg
+        slug, title, ['%s_%s' % (slug, val) for val in ('yes','no')], 'yesno.html')
+    self.yes_arg = '%s_yes' % self.slug
     self.yes_desc = yes_desc
     self.no_desc = no_desc
     self.question = question

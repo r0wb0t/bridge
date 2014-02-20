@@ -12,7 +12,6 @@ FOOD_CRITERIA = [
       'Wheelchair',
       'Any',
       'Do you need wheelchair access?',
-      'wheelchair',
       FoodSource.accessible),
 #  OrderByNextMealCriterion(),
 ]
