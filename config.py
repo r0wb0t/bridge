@@ -4,8 +4,7 @@ from models import FoodSource
 
 
 FOOD_CRITERIA = [
-#  LocationCriterion('loc', 'Location', FoodSource.location),
-#  MealCriterion('Meal'),
+  LocationCriterion('loc', 'Location', FoodSource.location),
   YesNoCriterion(
       'acc',
       'Access',
@@ -13,5 +12,4 @@ FOOD_CRITERIA = [
       'Any',
       'Do you need wheelchair access?',
       FoodSource.accessible),
-#  OrderByNextMealCriterion(),
 ]

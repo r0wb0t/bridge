@@ -8,6 +8,7 @@ import webapp2
 from google.appengine.ext import ndb
 
 import config
+from criterion import LocationCriterion
 from models import KioskLocation, FoodSource, MealSpec
 
 
@@ -84,6 +85,7 @@ class PopulateHandler(webapp2.RequestHandler):
 def handlers_for(criteria, model, slug):
   class QueryHandler(webapp2.RequestHandler):
     def get(self):
+      LocationCriterion.maybe_add_defaults(DEFAULT_KIOSK, self.request)
       next_criterion = None
       skip_all = False
 
@@ -125,6 +127,7 @@ def handlers_for(criteria, model, slug):
 
   class ResultsHandler(webapp2.RequestHandler):
     def get(self):
+      LocationCriterion.maybe_add_defaults(DEFAULT_KIOSK, self.request)
       options = []
       query = model.query()
 
@@ -133,10 +136,8 @@ def handlers_for(criteria, model, slug):
         query = options[-1].add_to_query(query)
 
       results = list(query)
-
-      for result in results:
-        for option in options:
-          option.annotate_entity(result)
+      for option in options:
+        option.postprocess_results(results)
 
       self.response.write(JINJA_ENVIRONMENT.get_template('list.html').render({
         'location': DEFAULT_KIOSK,
