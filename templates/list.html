@@ -108,7 +108,8 @@ for (var i = 0; i < maps.length; i++) {
     position: dest
   });
   var directionsRenderer = new google.maps.DirectionsRenderer({
-    preserveViewport: true
+    preserveViewport: true,
+    suppressMarkers: true
   });
   directionsRenderer.setMap(map);
   if (origin) {
