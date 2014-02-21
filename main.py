@@ -113,12 +113,12 @@ def handlers_for(criteria, model, slug):
         return
 
       other_args = {}
-      for name in self.request.arguments():
+      for name, value in self.request.params:
         if name != 'q' and name not in next_criterion.args:
-          other_args[name] = self.request.get(name)
+          other_args[name] = value
 
       self.response.write(JINJA_ENVIRONMENT.get_template('query.html').render({
-        'location': DEFAULT_KIOSK,
+        'kiosk': DEFAULT_KIOSK,
         'criterion': next_criterion,
         'other_args': other_args,
         'skip_all': skip_all,
@@ -140,7 +140,8 @@ def handlers_for(criteria, model, slug):
         option.postprocess_results(results)
 
       self.response.write(JINJA_ENVIRONMENT.get_template('list.html').render({
-        'location': DEFAULT_KIOSK,
+        'kiosk': DEFAULT_KIOSK,
+        'origin': LocationCriterion.get_geo_pt(self.request),
         'options': options,
         'results': results
       }))

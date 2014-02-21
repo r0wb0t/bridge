@@ -87,6 +87,12 @@ class LocationCriterion(Criterion):
       request.GET['geo'] = str(kiosk_loc.location)
       request.GET['geo_name'] = kiosk_loc.name
 
+  @staticmethod
+  def get_geo_pt(request):
+    if 'geo' in request.params:
+      return ndb.GeoPt(request.params['geo'])
+    return None
+
 
 class YesNoCriterion(Criterion):
   def __init__(self, slug, title, yes_desc, no_desc, question, bool_prop):

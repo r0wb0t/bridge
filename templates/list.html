@@ -25,7 +25,9 @@
 <ul class="results">
 {% for result in results %}
   <li>
-  <div class="map" data-location="{{ result.location.lat }},{{ result.location.lon }}"></div>
+  <div class="map" 
+       data-location="{{ result.location.lat }},{{ result.location.lon }}"
+       {% if origin %}data-origin="{{ origin.lat }},{{ origin.lon }}"{% endif %}></div>
   <div class="contact">
     <h2>{{ result.name }}</h2>
 
@@ -86,9 +88,12 @@ function parseLatLng(attr) {
 }
 
 var maps = document.getElementsByClassName('map');
+var directionsService = new google.maps.DirectionsService();
 for (var i = 0; i < maps.length; i++) {
+(function() {
   var dest = parseLatLng(maps[i].dataset.location);
-  if (!dest) continue;
+  var origin = parseLatLng(maps[i].dataset.origin);
+  if (!dest) return;
   
   var map = new google.maps.Map(maps[i], {
     center: dest,
@@ -102,6 +107,24 @@ for (var i = 0; i < maps.length; i++) {
     clickable: false,
     position: dest
   });
+  var directionsRenderer = new google.maps.DirectionsRenderer({
+    preserveViewport: true
+  });
+  directionsRenderer.setMap(map);
+  if (origin) {
+    directionsService.route(
+        {
+          origin: origin,
+          destination: dest,
+          travelMode: google.maps.TravelMode.WALKING
+        },
+        function(result, status) {
+          if (status == google.maps.DirectionsStatus.OK) {
+            directionsRenderer.setDirections(result);
+          }
+        });
+  }
+})();
 }
 
 </script>
