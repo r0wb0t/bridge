@@ -113,7 +113,7 @@ def handlers_for(criteria, model, slug):
         return
 
       other_args = {}
-      for name, value in self.request.params:
+      for name, value in self.request.params.iteritems():
         if name != 'q' and name not in next_criterion.args:
           other_args[name] = value
 
