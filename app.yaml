@@ -8,10 +8,18 @@ handlers:
 - url: /favicon\.ico
   static_files: favicon.ico
   upload: favicon\.ico
+- url: /mocks/
+  static_files: mocks/home.html
+  upload: mocks/home.html
+- url: /mocks
+  static_dir: mocks
 - url: /_/s
   static_dir: static
 - url: .*
   script: main.app
+
+error_handlers:
+  - file: default_error.html
 
 libraries:
 - name: webapp2

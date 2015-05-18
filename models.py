@@ -30,6 +30,7 @@ class FoodSource(ndb.Model):
   requires_ticket = ndb.BooleanProperty()
   requires_local_addr = ndb.BooleanProperty()
   requires_church_attend = ndb.BooleanProperty()
+  sixty_plus = ndb.BooleanProperty()
 
   extra_notes = ndb.TextProperty()
 

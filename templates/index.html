@@ -1,13 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Index{% endblock %}
-{% block content %}
+{% block classes %}full{% endblock %}
+{% block body %}
 
-<h1>Home</h1>
+<h1>Bridge Resource Finder</h1>
 
-<h2>Services</h2>
+<a href="services/food" class="button">START</a>
 
-<ul>
-  <li><a href="services/food">Food</a>
-</ul>
+<p>Launch a custom search, or view <a href="services/food/all">all resources</a></p>
 
 {% endblock %}

@@ -8,15 +8,17 @@ from geo_utils import by_closeness_to
 class Criterion(object):
   """A Criterion is a part of the query that must be fulfilled to get results.
   """
-  def __init__(self, slug, title, args, template):
+  def __init__(self, slug, title, args, template, default=None):
     self.slug = slug
     self.title = title
     self.args = set(args)
     self.template = template
+    self.default = default
 
   def specified_by(self, request):
     """Returns true if this criterion is fulfilled by the request."""
-    return any(arg in request.params for arg in self.args)
+    return (self.default is not None or
+        any(arg in request.params for arg in self.args))
 
   def bind(self, request, service_path):
     return Option(self, request, service_path)
@@ -95,18 +97,32 @@ class LocationCriterion(Criterion):
 
 
 class YesNoCriterion(Criterion):
-  def __init__(self, slug, title, yes_desc, no_desc, question, bool_prop):
+  def __init__(self,
+               slug,
+               title,
+               yes_desc,
+               no_desc,
+               question,
+               bool_prop,
+               default = None,
+               dominant = True):
     super(YesNoCriterion, self).__init__(
-        slug, title, ['%s_%s' % (slug, val) for val in ('yes','no')], 'yesno.html')
+        slug = slug,
+        title = title,
+        args = ['%s_%s' % (slug, val) for val in ('yes','no')],
+        template = 'yesno.html',
+        default = default)
     self.yes_arg = '%s_yes' % self.slug
+    self.no_arg = '%s_no' % self.slug
     self.yes_desc = yes_desc
     self.no_desc = no_desc
     self.question = question
     self.bool_prop = bool_prop
+    self.dominant = dominant
 
   def add_to_query(self, request, query):
-    if self.yes_arg in request.params:
-      return query.filter(self.bool_prop == True)
+    if [self.no_arg, self.yes_arg][self.dominant] in request.params:
+      return query.filter(self.bool_prop == self.dominant)
     else:
       return query
 
@@ -118,6 +134,8 @@ class YesNoCriterion(Criterion):
   def desc_value(self, request):
     if self.yes_arg in request.params:
       return self.yes_desc
-    else:
+    elif self.default is None:
       return self.no_desc
+    else:
+      return [self.no_desc, self.yes_desc][self.default]
 
