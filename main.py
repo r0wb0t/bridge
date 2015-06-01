@@ -8,8 +8,9 @@ import webapp2
 from google.appengine.ext import ndb
 
 import config
-from criterion import LocationCriterion
+from criterion import LocationCriterion, Query
 from models import KioskLocation, FoodSource, MealSpec
+from ohana import Ohana
 
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -23,6 +24,18 @@ DEFAULT_KIOSK = KioskLocation(
     name='Project Homeless Connect',
     address='25 Van Ness Ave',
     location=ndb.GeoPt(37.774929, -122.419416))
+
+
+USER_AGENT = 'Bridge/0.0.1' 
+OHANA = Ohana('https://ohana-api-demo.herokuapp.com/api', USER_AGENT)
+
+
+class Backend:
+  OHANA = 'ohana'
+  APPENGINE = 'appengine'
+
+
+BACKEND = Backend.OHANA
 
 
 class MainHandler(webapp2.RequestHandler):
@@ -129,13 +142,17 @@ def handlers_for(criteria, model, slug):
     def get(self):
       LocationCriterion.maybe_add_defaults(DEFAULT_KIOSK, self.request)
       options = []
-      query = model.query()
+      query = Query()
 
       for criterion in criteria:
         options.append(criterion.bind(self.request, '/services/%s' % slug));
-        query = options[-1].add_to_query(query)
+        options[-1].add_to_query(query)
 
-      results = list(query)
+      if BACKEND == Backend.OHANA:
+        results = query.exec_ohana(OHANA)
+      elif BACKEND == Backend.APPENGINE:
+        results = query.exec_appengine()
+
       for option in options:
         option.postprocess_results(results)
 

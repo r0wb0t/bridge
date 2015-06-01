@@ -1,9 +1,60 @@
 import urllib
 import urlparse
 
-from google.appengine.ext import ndb
-
 from geo_utils import by_closeness_to
+from ohana import Ohana
+
+class LatLong:
+  def __init__(self, lat, lon):
+    self.lat = lat
+    self.lon = lon
+
+  @classmethod
+  def from_str(cls, s):
+    return LatLong(*[float(d) for d in s.split(',')])
+
+
+class SearchResult:
+  def __init__(self, name, address, location=None, phones=[], website=None):
+    self.name = name
+    self.address = address
+    self.location = location
+    self.phones = phones
+    self.website = website
+
+  @classmethod
+  def from_ohana_location(cls, loc):
+    return SearchResult(name=loc.name,
+                        address=str(loc.address),
+                        location=LatLong(loc.latitude, loc.longitude),
+                        website=loc.website)
+
+
+class Query:
+  def __init__(self):
+    self.location = None
+
+  def add_location(self, loc):
+    self.location = loc
+
+  def add_filter(self, prop, value):
+    # TODO(rnairn): Save filters.
+    pass
+
+  def exec_ohana(self, ohana):
+    params = {'keywords': 'food'}
+    if self.location is not None:
+      params['latitude'] = self.location.lat
+      params['longitude'] = self.location.lon
+
+    return [SearchResult.from_ohana_location(loc)
+            for loc in ohana.search(**params)]
+
+  def exec_appengine(self):
+    q = FoodSource.query()
+    # TODO(rnairn): Add filters etc.
+    return list(q)
+
 
 class Criterion(object):
   """A Criterion is a part of the query that must be fulfilled to get results.
@@ -24,7 +75,7 @@ class Criterion(object):
     return Option(self, request, service_path)
 
   def add_to_query(self, request, query):
-    return query
+    pass
 
   def postprocess_results(self, request, results):
     pass
@@ -41,7 +92,7 @@ class Option(object):
     self.service_path = service_path
 
   def add_to_query(self, query):
-    return self.criterion.add_to_query(self.request, query)
+    self.criterion.add_to_query(self.request, query)
 
   def postprocess_results(self, results):
     self.criterion.postprocess_results(self.request, results)
@@ -73,12 +124,15 @@ class LocationCriterion(Criterion):
   def desc_value(self, request):
     return 'Near %s' % (request.get('geo_name') or request.get('geo'))
 
+  def add_to_query(self, request, query):
+    query.add_location(LocationCriterion.get_geo_pt(request))
+
   def postprocess_results(self, request, results):
     if 'geo' in request.params:
-      pt = ndb.GeoPt(request.params['geo'])
+      pt = LatLong.from_str(request.params['geo'])
       results.sort(
           by_closeness_to(pt),
-          key=lambda r: r.to_dict()[self.geo_prop._name])
+          key=lambda r: r.location)
 
   @staticmethod
   def maybe_add_defaults(kiosk_loc, request):
@@ -92,7 +146,7 @@ class LocationCriterion(Criterion):
   @staticmethod
   def get_geo_pt(request):
     if 'geo' in request.params:
-      return ndb.GeoPt(request.params['geo'])
+      return LatLong.from_str(request.params['geo'])
     return None
 
 
@@ -122,13 +176,12 @@ class YesNoCriterion(Criterion):
 
   def add_to_query(self, request, query):
     if [self.no_arg, self.yes_arg][self.dominant] in request.params:
-      return query.filter(self.bool_prop == self.dominant)
-    else:
-      return query
+      query.add_filter(self.bool_prop, self.dominant)
 
   def annotate_result(self, request, result):
     if self.yes_arg in request.params:
-      val = result.to_dict()[self.bool_prop._name]
+      pass
+      # val = result.to_dict()[self.bool_prop._name]
       # TODO(rnairn): Add annotation.
   
   def desc_value(self, request):

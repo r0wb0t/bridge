@@ -56,10 +56,10 @@
       {% endif %}
     {%- endmacro %}
 
-    {{ renderMeal('Breakfast', result.breakfast) }}
-    {{ renderMeal('Lunch', result.lunch) }}
-    {{ renderMeal('Snack', result.snack) }}
-    {{ renderMeal('Dinner', result.dinner) }}
+    {% if result.breakfast %}{{ renderMeal('Breakfast', result.breakfast) }}{% endif %}
+    {% if result.lunch %}{{ renderMeal('Lunch', result.lunch) }}{% endif %}
+    {% if result.snack %}{{ renderMeal('Snack', result.snack) }}{% endif %}
+    {% if result.dinner %}{{ renderMeal('Dinner', result.dinner) }}{% endif %}
   </div>
   <div class="props">
     <ul>
