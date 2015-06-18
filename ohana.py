@@ -42,10 +42,17 @@ class Ohana:
 
 
 class Location:
-  def __init__(self, id, name, address, website, latitude, longitude, **kwargs):
+  def __init__(self,
+               id,
+               name=None,
+               address=None,
+               website=None,
+               latitude=None,
+               longitude=None,
+               **kwargs):
     self.id = id
     self.name = name
-    self.address = Address(**address)
+    self.address = address is None and Address(**address) or None
     self.website = website
     self.latitude = latitude
     self.longitude = longitude
@@ -55,10 +62,10 @@ class Location:
 
 class Address:
   def __init__(self,
-               address_1,
-               city,
-               state_province,
-               postal_code,
+               address_1=None,
+               city=None,
+               state_province=None,
+               postal_code=None,
                address_2=None,
                **kwargs):
     self.address_1 = address_1

@@ -27,7 +27,7 @@ DEFAULT_KIOSK = KioskLocation(
 
 
 USER_AGENT = 'Bridge/0.0.1' 
-OHANA = Ohana('https://ohana-api-demo.herokuapp.com/api', USER_AGENT)
+OHANA = Ohana('http://api.smc-connect.org', USER_AGENT)
 
 
 class Backend:
