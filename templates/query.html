@@ -3,12 +3,18 @@
 {% block classes %}full{% endblock %}
 {% block body %}
 
-<form>
-{% for name, value in other_args.iteritems() %}
-  <input type=hidden name="{{ name }}" value="{{ value }}">
-{% endfor %}
-{% include criterion.template %}
-</form>
+<div class="header"><a href="/">Bridge Resource Finder</a></div>
+
+<a class="back" title="Go back" href="{% if previous %}{{ previous }}{% else %}/{% endif %}"><img src="/_/s/back.png" alt="Go back"></a>
+
+<div class="content">
+  <form>
+  {% for name, value in other_args.iteritems() %}
+    <input type=hidden name="{{ name }}" value="{{ value }}">
+  {% endfor %}
+  {% include criterion.template %}
+  </form>
+</div>
 
 {% endblock %}
 

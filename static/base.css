@@ -3,45 +3,71 @@ body {
 }
 
 body, td {
-  font-family: sans-serif;
+  font-family: "RobotoLight", "Helvetica Neue", Arial, sans-serif;
 }
 
 body.full {
   background-color: #008d9e;
   color: #fff;
-  text-align: center;
-  padding-top: 100px;
 }
 
 body.full a {
   color: #fff;
 }
 
-.header {
+body.full .header {
+  margin: 10px;
+}
+
+body.full .back {
+  float: left;
+  margin-left: 10px;
+  margin-right: 26px;
+  margin-top: 180px;
+}
+
+body.full .content {
+  text-align: center;
+  margin: 100px;
+}
+
+body.list .header {
   padding: 10px;
   background-color: #008d9e;
   color: #fff;
 }
 
-.header a {
+body.list .header a {
   color: #fff;
   text-decoration: none;
 }
 
-body.full a.button, body.full button.button {
-  display: inline-block;
-  padding: 20px;
-  width: 16em;
-  background-color: #fff;
-  color: #008d9e;
-  font-weight: bold;
-  text-decoration: none;
-  border-style: none;
-  font-size: inherit;
-  margin: 10px;
+h1.title {
+  font-size: 80px;
+  font-weight: normal;
 }
 
-.content {
+h2.question {
+  font-size: 48px;
+  font-weight: normal;
+}
+
+body.full a.button, body.full button.button {
+  cursor: pointer;
+  display: inline-block;
+  padding: 20px;
+  width: 10em;
+  background-color: #fff;
+  color: #008d9e;
+  font-weight: normal;
+  text-decoration: none;
+  border-style: none;
+  font-size: 26px;
+  margin: 10px;
+  text-align: center;
+}
+
+body.list .content {
   margin: 10px;
 }
 

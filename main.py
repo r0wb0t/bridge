@@ -1,6 +1,6 @@
 from datetime import time
 import os
-import urlparse
+from urlparse import urlparse, urlunparse
 
 import jinja2
 import webapp2
@@ -116,7 +116,7 @@ def handlers_for(criteria, model, slug):
             break
 
       if not next_criterion:
-        self.redirect(urlparse.urlunparse((
+        self.redirect(urlunparse((
             '',
             '',
             '/services/%s/all' % slug,
@@ -130,11 +130,19 @@ def handlers_for(criteria, model, slug):
         if name != 'q' and name not in next_criterion.args:
           other_args[name] = value
 
+      previous = None
+      referrer = (self.request.referrer is not None
+          and urlparse(self.request.referrer)
+          or None)
+      if referrer.netloc == self.request.host:
+        previous = urlunparse(('', '', referrer.path, '', referrer.query, ''));
+
       self.response.write(JINJA_ENVIRONMENT.get_template('query.html').render({
         'kiosk': DEFAULT_KIOSK,
         'criterion': next_criterion,
         'other_args': other_args,
         'skip_all': skip_all,
+        'previous': previous,
       }))
 
 
