@@ -8,9 +8,9 @@ import webapp2
 from google.appengine.ext import ndb
 
 import config
-from criterion import LocationCriterion, Query
-from models import KioskLocation, FoodSource, MealSpec
+from models import FoodSource, MealSpec
 from ohana import Ohana
+from query import OhanaBackend, Query
 
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -19,29 +19,14 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     extensions=['jinja2.ext.autoescape'],
     autoescape=True)
 
-
-DEFAULT_KIOSK = KioskLocation(
-    name='Project Homeless Connect',
-    address='25 Van Ness Ave',
-    location=ndb.GeoPt(37.774929, -122.419416))
-
-
 USER_AGENT = 'Bridge/0.0.1' 
 OHANA = Ohana('http://api.smc-connect.org', USER_AGENT)
-
-
-class Backend:
-  OHANA = 'ohana'
-  APPENGINE = 'appengine'
-
-
-BACKEND = Backend.OHANA
+BACKEND = OhanaBackend(OHANA)
 
 
 class MainHandler(webapp2.RequestHandler):
   def get(self):
     self.response.write(JINJA_ENVIRONMENT.get_template('index.html').render({
-      'location': DEFAULT_KIOSK,
     }))
 
 
@@ -98,7 +83,6 @@ class PopulateHandler(webapp2.RequestHandler):
 def handlers_for(criteria, model, slug):
   class QueryHandler(webapp2.RequestHandler):
     def get(self):
-      LocationCriterion.maybe_add_defaults(DEFAULT_KIOSK, self.request)
       next_criterion = None
       skip_all = False
 
@@ -138,7 +122,6 @@ def handlers_for(criteria, model, slug):
         previous = urlunparse(('', '', referrer.path, '', referrer.query, ''));
 
       self.response.write(JINJA_ENVIRONMENT.get_template('query.html').render({
-        'kiosk': DEFAULT_KIOSK,
         'criterion': next_criterion,
         'other_args': other_args,
         'skip_all': skip_all,
@@ -148,7 +131,6 @@ def handlers_for(criteria, model, slug):
 
   class ResultsHandler(webapp2.RequestHandler):
     def get(self):
-      LocationCriterion.maybe_add_defaults(DEFAULT_KIOSK, self.request)
       options = []
       query = Query()
 
@@ -156,17 +138,13 @@ def handlers_for(criteria, model, slug):
         options.append(criterion.bind(self.request, '/services/%s' % slug));
         options[-1].add_to_query(query)
 
-      if BACKEND == Backend.OHANA:
-        results = query.exec_ohana(OHANA)
-      elif BACKEND == Backend.APPENGINE:
-        results = query.exec_appengine()
+      results = BACKEND.search(query)
 
       for option in options:
         option.postprocess_results(results)
 
       self.response.write(JINJA_ENVIRONMENT.get_template('list.html').render({
-        'kiosk': DEFAULT_KIOSK,
-        'origin': LocationCriterion.get_geo_pt(self.request),
+        'origin': config.LOCATION_CRITERION.get_geo(self.request),
         'options': options,
         'results': results
       }))

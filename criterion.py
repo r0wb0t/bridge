@@ -2,73 +2,25 @@ import urllib
 import urlparse
 
 from geo_utils import by_closeness_to
-from ohana import Ohana
+from query import LatLong
 
-class LatLong:
-  def __init__(self, lat, lon):
-    self.lat = lat
-    self.lon = lon
-
-  @classmethod
-  def from_str(cls, s):
-    return LatLong(*[float(d) for d in s.split(',')])
-
-
-class SearchResult:
-  def __init__(self, name, address, location=None, phones=[], website=None):
-    self.name = name
-    self.address = address
-    self.location = location
-    self.phones = phones
-    self.website = website
-
-  @classmethod
-  def from_ohana_location(cls, loc):
-    return SearchResult(name=loc.name,
-                        address=str(loc.address),
-                        location=LatLong(loc.latitude, loc.longitude),
-                        website=loc.website)
-
-
-class Query:
-  def __init__(self):
-    self.location = None
-
-  def add_location(self, loc):
-    self.location = loc
-
-  def add_filter(self, prop, value):
-    # TODO(rnairn): Save filters.
-    pass
-
-  def exec_ohana(self, ohana):
-    params = {'keywords': 'food'}
-    if self.location is not None:
-      params['latitude'] = self.location.lat
-      params['longitude'] = self.location.lon
-
-    return [SearchResult.from_ohana_location(loc)
-            for loc in ohana.search(**params)]
-
-  def exec_appengine(self):
-    q = FoodSource.query()
-    # TODO(rnairn): Add filters etc.
-    return list(q)
-
+# Criterion.
+#
+# Criteria translate between the HTTP request params and the query.
 
 class Criterion(object):
   """A Criterion is a part of the query that must be fulfilled to get results.
   """
-  def __init__(self, slug, title, args, template, default=None):
+  def __init__(self, slug, title, args, template, has_default=False):
     self.slug = slug
     self.title = title
     self.args = set(args)
     self.template = template
-    self.default = default
+    self.has_default = has_default
 
   def specified_by(self, request):
     """Returns true if this criterion is fulfilled by the request."""
-    return (self.default is not None or
+    return (self.has_default or
         any(arg in request.params for arg in self.args))
 
   def bind(self, request, service_path):
@@ -116,38 +68,54 @@ class Option(object):
 
 
 class LocationCriterion(Criterion):
-  def __init__(self, slug, title, geo_prop):
+  def __init__(self,
+               slug,
+               title,
+               geo_field,
+               default_name=None,
+               default_geo=None):
     super(LocationCriterion, self).__init__(
-        slug, title, ['geo', 'geo_name'], 'location.html')
-    self.geo_prop = geo_prop
+        slug,
+        title,
+        ['geo', 'geo_name'],
+        'location.html',
+        has_default=(default_geo is not None))
+    self.geo_field = geo_field
+    self.default_name = default_name
+    self.default_geo = default_geo
+
+  def get_name(self, request):
+    if 'geo_name' in request.params:
+      return request.get('geo_name')
+    else:
+      return self.default_name
+
+  def get_geo(self, request):
+    if 'geo_name' in request.params:
+      return  LatLong.from_str(request.get('geo'))
+    else:
+      return self.default_geo
 
   def desc_value(self, request):
-    return 'Near %s' % (request.get('geo_name') or request.get('geo'))
+    name = self.get_name(request)
+    if name is not None:
+      return 'Near %s' % name
+    geo = self.get_geo(request)
+    if geo is not None:
+      return 'Near %s, %s' % (geo.lat, geo.lon)
+    return 'Unknown'
 
   def add_to_query(self, request, query):
-    query.add_location(LocationCriterion.get_geo_pt(request))
+    geo = self.get_geo(request)
+    if geo is not None:
+      query.add_filter(self.geo_field, geo)
 
   def postprocess_results(self, request, results):
-    if 'geo' in request.params:
-      pt = LatLong.from_str(request.params['geo'])
+    geo = self.get_geo(request)
+    if geo is not None:
       results.sort(
-          by_closeness_to(pt),
+          by_closeness_to(geo),
           key=lambda r: r.location)
-
-  @staticmethod
-  def maybe_add_defaults(kiosk_loc, request):
-    """Add fake geo properties to the request if they are not specified
-       manually.
-    """
-    if 'geo' not in request.params:
-      request.GET['geo'] = str(kiosk_loc.location)
-      request.GET['geo_name'] = kiosk_loc.name
-
-  @staticmethod
-  def get_geo_pt(request):
-    if 'geo' in request.params:
-      return LatLong.from_str(request.params['geo'])
-    return None
 
 
 class YesNoCriterion(Criterion):
@@ -157,26 +125,34 @@ class YesNoCriterion(Criterion):
                yes_desc,
                no_desc,
                question,
-               bool_prop,
-               default = None,
-               dominant = True):
+               bool_field,
+               default = None,):
     super(YesNoCriterion, self).__init__(
         slug = slug,
         title = title,
         args = ['%s_%s' % (slug, val) for val in ('yes','no')],
         template = 'yesno.html',
-        default = default)
+        has_default = (default is not None))
     self.yes_arg = '%s_yes' % self.slug
     self.no_arg = '%s_no' % self.slug
     self.yes_desc = yes_desc
     self.no_desc = no_desc
     self.question = question
-    self.bool_prop = bool_prop
-    self.dominant = dominant
+    self.bool_field = bool_field
+    self.default = default
+
+  def get_value(self, request):
+    if self.yes_arg in request.params:
+      return True
+    if self.no_arg in request.params:
+      return False
+    else:
+      return self.default
 
   def add_to_query(self, request, query):
-    if [self.no_arg, self.yes_arg][self.dominant] in request.params:
-      query.add_filter(self.bool_prop, self.dominant)
+    value = self.get_value(request)
+    if value is not None:
+      query.add_filter(self.bool_field, value)
 
   def annotate_result(self, request, result):
     if self.yes_arg in request.params:
@@ -185,10 +161,8 @@ class YesNoCriterion(Criterion):
       # TODO(rnairn): Add annotation.
   
   def desc_value(self, request):
-    if self.yes_arg in request.params:
-      return self.yes_desc
-    elif self.default is None:
-      return self.no_desc
+    value = self.get_value(request)
+    if value is None:
+      return 'Unknown'
     else:
-      return [self.no_desc, self.yes_desc][self.default]
-
+      return [self.no_desc, self.yes_desc][value]

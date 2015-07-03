@@ -52,7 +52,7 @@ class Location:
                **kwargs):
     self.id = id
     self.name = name
-    self.address = address is None and Address(**address) or None
+    self.address = address is not None and Address(**address) or None
     self.website = website
     self.latitude = latitude
     self.longitude = longitude
