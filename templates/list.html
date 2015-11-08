@@ -7,7 +7,7 @@
 
 {% endblock %}
 
-{% block classes %}list{% endblock %}
+{% block classes %}page list{% endblock %}
 {% block body %}
 
 <div class="header">
@@ -31,7 +31,14 @@
        data-location="{{ result.location.lat }},{{ result.location.lon }}"
        {% if origin %}data-origin="{{ origin.lat }},{{ origin.lon }}"{% endif %}></div>
   <div class="contact">
-    <h2>{{ result.name }}</h2>
+    <h2>
+      {% if result.service_type %}
+        {{ _(result.service_type.name) }}
+        {% if result.service_detail %} : {{ result.service_detail}}{% endif %} 
+        <br>
+      {% endif %}
+      {{ result.name }}
+    </h2>
 
     {% if result.website %} - <span class="website">{{ result.website }}</span>{% endif %}
 
@@ -70,6 +77,9 @@
       {% if result.requires_church_attend %}<li>Requires Church Attendence{% endif %}
     </ul>
   </div>
+  {% if result.id %}
+    <a href="/edit?id={{ result.id }}&service_id={{ result.service_id }}&r={{ request.path_qs|urlencode }}">Edit</a>
+  {% endif %}
 
   <br clear=both>
 {% else %}

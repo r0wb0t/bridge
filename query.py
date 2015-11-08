@@ -1,3 +1,57 @@
+from google.appengine.ext import ndb
+
+import re
+
+def memodict(f):
+  class memodict(dict):
+    def __missing__(self, key):
+      ret = self[key] = f(key)
+      return ret 
+  return memodict().__getitem__
+
+
+class EnumType(type):
+  def __init__(cls, name, bases, dct):
+    super(EnumType, cls).__init__(name, bases, dct)
+    cls._reverse_dict = {}
+    for k, v in cls.__dict__.items():
+      if not k.startswith('_') and type(v) == int:
+        instance = cls()
+        instance.name = k
+        instance.number = v
+        setattr(cls, k, instance) 
+        cls._reverse_dict[v] = instance
+
+
+class Enum(object):
+  __metaclass__ = EnumType
+
+  @classmethod
+  def values(enum_type):
+    return [v for k, v in enum_type.__dict__.items()
+              if not k.startswith('_')]
+
+  @classmethod
+  def names(enum_type):
+    return [k for k, v in enum_type.__dict__.items()
+              if not k.startswith('_')]
+
+  @classmethod
+  def for_name(enum_type, name):
+    return enum_type.__dict__[name]
+
+  @classmethod
+  def for_number(enum_type, number):
+    return enum_type._reverse_dict[number]
+
+  @classmethod
+  def export_to(enum_type, jinja_env):
+    jinja_env.globals[enum_type.__name__] = enum_type
+
+
+class ServiceType(Enum):
+  MEAL = 1
+  FREE_FOOD = 2
 
 
 class LatLong:
@@ -5,13 +59,27 @@ class LatLong:
     self.lat = lat
     self.lon = lon
 
+  def to_geo(self):
+    return ndb.GeoPt(self.lat, self.lon)
+
+  @classmethod
+  def to_geo(cls, latlong):
+    return latlong and latlong.to_geo() or None
+
+  @classmethod
+  def from_geo(cls, geopt):
+    return geopt and LatLong(geopt.lat, geopt.lon) or None
+
   @classmethod
   def from_str(cls, s):
-    return LatLong(*[float(d) for d in s.split(',')])
+    coords = [float(d) for d in re.split(r'[, ]+', s) if d]
+    if len(coords) == 2:
+      return LatLong(*coords)
 
 
 class SearchResult:
   def __init__(self, name, address, location=None, phones=[], website=None):
+    self.id = None
     self.name = name
     self.address = address
     self.location = location
@@ -58,10 +126,4 @@ class OhanaBackend:
                         address=str(loc.address),
                         location=LatLong(loc.latitude, loc.longitude),
                         website=loc.website)
-    
 
-class AppEngineBackend:
-  def search(self, query):
-    q = FoodSource.query()
-    # TODO(rnairn): Add filters etc.
-    return list(q)

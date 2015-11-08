@@ -1,7 +1,7 @@
 from google.appengine.ext import ndb
 
 from criterion import Criterion, LocationCriterion, YesNoCriterion 
-from models import KioskLocation, FoodSource
+from models import KioskLocation, Location
 from query import Field
 
 

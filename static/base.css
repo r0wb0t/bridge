@@ -31,13 +31,13 @@ body.full .content {
   margin: 100px;
 }
 
-body.list .header {
+body.page .header {
   padding: 10px;
   background-color: #008d9e;
   color: #fff;
 }
 
-body.list .header a {
+body.page .header a {
   color: #fff;
   text-decoration: none;
 }
@@ -67,7 +67,7 @@ body.full a.button, body.full button.button {
   text-align: center;
 }
 
-body.list .content {
+body.page .content {
   margin: 10px;
 }
 
@@ -121,3 +121,18 @@ body.list .content {
   height: 300px;
   background-color: #ccc;
 }
+
+body.edit table {
+  border-spacing: 0 10px;
+}
+
+body.edit tr:first-child > td {
+  border-top: 1px dotted #ccc;
+  padding-top: 10px;
+}
+
+body.edit tbody:first-child tr:first-child > td {
+  border-style: none;
+  padding-top: 0;
+}
+

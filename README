@@ -1,0 +1,14 @@
+
+
+
+
+# TODO next
+
+* Use protos for data model and ndb just for indexing
+* Improve search result layout.
+* Switch to static maps for search page.
+* Improve location choosing page.
+* Add location chooser to Edit page
+* Make Edit page
+
+

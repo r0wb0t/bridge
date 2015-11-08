@@ -1,6 +1,7 @@
-from datetime import time
+from datetime import time, datetime
 import os
 from urlparse import urlparse, urlunparse
+import urllib
 
 import jinja2
 import webapp2
@@ -8,80 +9,114 @@ import webapp2
 from google.appengine.ext import ndb
 
 import config
-from models import FoodSource, MealSpec
+from models import Location, Service, ServiceTime
 from ohana import Ohana
-from query import OhanaBackend, Query
+from query import OhanaBackend, Query, ServiceType, LatLong
+from backends import AppEngineBackend
 
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(
         os.path.join(os.path.dirname(__file__), 'templates')),
-    extensions=['jinja2.ext.autoescape'],
+    extensions=['jinja2.ext.autoescape', 'jinja2.ext.i18n'],
     autoescape=True)
+JINJA_ENVIRONMENT.install_null_translations()
 
-USER_AGENT = 'Bridge/0.0.1' 
-OHANA = Ohana('http://api.smc-connect.org', USER_AGENT)
-BACKEND = OhanaBackend(OHANA)
+ServiceType.export_to(JINJA_ENVIRONMENT)
+
+def urlencode_filter(s):
+  return urllib.quote_plus(s)
+
+JINJA_ENVIRONMENT.filters['urlencode'] = urlencode_filter
 
 
-class MainHandler(webapp2.RequestHandler):
+#USER_AGENT = 'Bridge/0.0.1' 
+#OHANA = Ohana('http://api.smc-connect.org', USER_AGENT)
+#BACKEND = OhanaBackend(OHANA)
+BACKEND = AppEngineBackend()
+
+
+class BaseHandler(webapp2.RequestHandler):
+  def write_template(self, template_name, params={}):
+    params.update(request=self.request)
+    self.response.write(
+        JINJA_ENVIRONMENT.get_template(template_name).render(params))
+
+
+class MainHandler(BaseHandler):
   def get(self):
-    self.response.write(JINJA_ENVIRONMENT.get_template('index.html').render({
-    }))
+    self.write_template('index.html')
 
 
-class PopulateHandler(webapp2.RequestHandler):
+class EditHandler(BaseHandler):
   def get(self):
-    self.response.write(JINJA_ENVIRONMENT.get_template('form.html').render())
+    loc = None
+    service = None
+    if self.request.get('id'):
+      loc = Location.get_by_id(int(self.request.get('id')))
 
+      if self.request.get('service_id'):
+        service = loc.service(int(self.request.get('service_id')))
+
+    self.write_template('form.html', {
+      'loc': loc,
+      'service': service,
+      'redirect_to': self.request.get('r'),
+    })
+
+  @ndb.transactional
   def post(self):
     days = ['mon','tue','wed','thu','fri','sat','sun']
-    source = FoodSource(
+    item = None
+    if self.request.get('id'):
+      loc = Location.get_by_id(int(self.request.get('id')))
+    else:
+      loc = Location()
+    loc.populate(
         name=self.request.get('name'),
         address=self.request.get('address'),
-        location=ndb.GeoPt(
-            self.request.get('location').split(',')[0],
-            self.request.get('location').split(',')[1]),
+        geo=LatLong.to_geo(LatLong.from_str(self.request.get('location'))),
         phones=[int(re.sub(r'[^0-9]+', '', p))
                 for p in self.request.get('phones').splitlines()
                 if len(p.strip()) == 0],
-        website=self.request.get('website'),
-        breakfast=MealSpec(
-            start=time(int(self.request.get('breakfast_start'))),
-            end=time(int(self.request.get('breakfast_end'))),
-            days=[days.index(d) for d in days
-                  if 'breakfast_days_%s' % d in self.request.arguments()],
-            menu=self.request.get('breakfast_menu').splitlines()),
-        lunch=MealSpec(
-            start=time(int(self.request.get('lunch_start'))),
-            end=time(int(self.request.get('lunch_end'))),
-            days=[days.index(d) for d in days
-                  if 'lunch_days_%s' % d in self.request.arguments()],
-            menu=self.request.get('lunch_menu').splitlines()),
-        snack=MealSpec(
-            start=time(int(self.request.get('snack_start'))),
-            end=time(int(self.request.get('snack_end'))),
-            days=[days.index(d) for d in days
-                  if 'snack_days_%s' % d in self.request.arguments()],
-            menu=self.request.get('snack_menu').splitlines()),
-        dinner=MealSpec(
-            start=time(int(self.request.get('dinner_start'))),
-            end=time(int(self.request.get('dinner_end'))),
-            days=[days.index(d) for d in days
-                  if 'dinner_days_%s' % d in self.request.arguments()],
-            menu=self.request.get('dinner_menu').splitlines()),
-        accessible='accessible' in self.request.arguments(),
+        websites=[self.request.get('website')],
+        accessible='accessible' in self.request.arguments())
+    
+    service = None
+    if self.request.get('service_id'):
+      service = loc.service(int(self.request.get('service_id')))
+    if service is None:
+      service = loc.add_service()
+
+    service.populate(
+        service_type=ServiceType.for_name(self.request.get('service_type')),
+        service_detail=self.request.get('service_detail'),
         requires_ticket='requires_ticket' in self.request.arguments(),
         requires_local_addr='requires_local_addr' in self.request.arguments(),
         requires_church_attend=(
             'requires_church_attend' in self.request.arguments()),
         extra_notes=self.request.get('extra_notes'))
-    source.put()
-    self.redirect('/populate')
+
+    service.times = []
+    num_times = min(100, int(self.request.get('num_times')))
+    for i in range(num_times):
+      time_arg = lambda name: '%s_%s' % (name, i)
+      days=[days.index(d) for d in days
+            if time_arg('days_%s' % d) in self.request.arguments()]
+      if days:
+        parse_time = lambda s: datetime.strptime(s, '%H:%M').time()
+        service.times.append(ServiceTime(
+            start=parse_time(self.request.get(time_arg('start'))),
+            end=parse_time(self.request.get(time_arg('end'))),
+            days=days))
+   
+    loc.put()
+    redirect_url = self.request.get('r')
+    self.redirect(redirect_url and redirect_url or '/edit')
 
 
-def handlers_for(criteria, model, slug):
-  class QueryHandler(webapp2.RequestHandler):
+def handlers_for(criteria, slug):
+  class QueryHandler(BaseHandler):
     def get(self):
       next_criterion = None
       skip_all = False
@@ -121,15 +156,15 @@ def handlers_for(criteria, model, slug):
       if referrer.netloc == self.request.host:
         previous = urlunparse(('', '', referrer.path, '', referrer.query, ''));
 
-      self.response.write(JINJA_ENVIRONMENT.get_template('query.html').render({
+      self.write_template('query.html', {
         'criterion': next_criterion,
         'other_args': other_args,
         'skip_all': skip_all,
         'previous': previous,
-      }))
+      })
 
 
-  class ResultsHandler(webapp2.RequestHandler):
+  class ResultsHandler(BaseHandler):
     def get(self):
       options = []
       query = Query()
@@ -143,11 +178,11 @@ def handlers_for(criteria, model, slug):
       for option in options:
         option.postprocess_results(results)
 
-      self.response.write(JINJA_ENVIRONMENT.get_template('list.html').render({
+      self.write_template('list.html', {
         'origin': config.LOCATION_CRITERION.get_geo(self.request),
         'options': options,
         'results': results
-      }))
+      })
 
 
   return [
@@ -158,6 +193,6 @@ def handlers_for(criteria, model, slug):
 
 app = webapp2.WSGIApplication(
   [('/', MainHandler),
-   ('/populate', PopulateHandler)] +
-      handlers_for(config.FOOD_CRITERIA, FoodSource, 'food'),
+   ('/edit', EditHandler)] +
+      handlers_for(config.FOOD_CRITERIA, 'food'),
   debug=True)
