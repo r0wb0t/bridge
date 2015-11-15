@@ -10,6 +10,8 @@ def by_closeness_to(pt):
      list.sort which compares by increasing distance to <pt>.
   """
   def closer(a, b):
+    if not a and not b:
+      return 0
     return round_towards_inf(distance(a, pt) - distance(b, pt))
 
   return closer

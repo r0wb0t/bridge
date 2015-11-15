@@ -3,7 +3,7 @@ body {
 }
 
 body, td {
-  font-family: "RobotoLight", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Helvetica Neue", Arial, sans-serif;
 }
 
 body.full {
@@ -89,10 +89,10 @@ body.page .content {
   list-style-type: none;
   padding: 0;
   margin: 0;
+  max-width: 50em;
 }
 
 .results > li {
-  border: 1px solid #333;
   margin-bottom: 5px;
 }
 
@@ -136,3 +136,24 @@ body.edit tbody:first-child tr:first-child > td {
   padding-top: 0;
 }
 
+body.edit th {
+  text-align: left;
+}
+
+body.edit td {
+  vertical-align: top;
+}
+
+.service-tab {
+  display: inline-block;
+  padding: 5px;
+  border: 1px solid #333;
+  background-color: #eee;
+}
+
+.service-tab.self {
+  border-bottom-style: none;
+  background-color: transparent;
+  color: #000;
+  text-decoration: none;
+}

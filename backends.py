@@ -24,10 +24,14 @@ class AppEngineBackend:
             location=LatLong.from_geo(loc.geo),
             website=loc.websites and loc.websites[0] or None)
         result.id = loc.key.id()
+        result.phones = loc.phones
+        result.accessible = loc.accessible
         result.service_id = service.service_id
         result.service_type = service.service_type
         result.service_detail = service.service_detail
         result.service_times = service.times
+        result.service_notes = service.extra_notes
+        result.last_modified = loc.last_modified
         results.append(result)
     return results
 

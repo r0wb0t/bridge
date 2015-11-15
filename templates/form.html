@@ -1,10 +1,17 @@
 {% extends "base.html" %}
+
+{% import "common.html" as common %}
+
 {% block classes %}page edit{% endblock %}
 {% block body %}
 
 <div class="header">
 <a href="/">Bridge Resource Finder</a>
 </div>
+
+{% macro checkedif(cond) -%}
+{% if cond %}checked{%endif%}
+{%- endmacro %}
 
 <div class="content">
 <form method=post>
@@ -17,9 +24,32 @@
   <tr><td>Name</td><td><input name=name value="{{ loc.name }}"></td></tr>
   <tr><td>Address</td><td><input name=address></td></tr>
   <tr><td>Geo Location</td><td><input name=location></td></tr>
-  <tr><td>Phones</td><td><textarea name=phones></textarea></td></tr>
+  <tr><td>Phones</td>
+      <td>
+        <textarea name=phones>{% for phone in loc.phones -%}
+          {{ common.phone(phone) }}&#13;&#10;
+        {%- endfor %}</textarea>
+      </td>
+  </tr>
   <tr><td>Website</td><td><input name=website></td></tr>
-  <tr><td>Wheelchair Access</td><td><input type=checkbox name=accessible></td></tr>
+  <tr><td>Wheelchair Access</td>
+      <td><input type=checkbox name=accessible {{ checkedif(loc.accessible) }}></td></tr>
+</tbody>
+<tbody>
+  <tr><th colspan=2>
+    {% for other_service in loc.services %}
+      <a class="service-tab {% if other_service.service_id == service.service_id %}self{% endif %}"
+         href="/edit?id={{ loc.key.id() }}&service_id={{ other_service.service_id }}&r={{ request.get('r') }}">
+        {{ other_service.service_detail }}
+      </a>
+    {% endfor %}
+    {% if service %}
+      <a href="/edit?id={{ loc.key.id() }}&r={{ request.get('r') }}">+ Add New Service</a>
+    {% else %}
+      <span class="service-tab self">New Service</span>
+    {% endif %}
+    </th>
+  </tr>
 </tbody>
 <tbody>
   <tr><td>Service Type</td><td>
@@ -38,6 +68,7 @@
       <td><input name=service_detail value="{{ service.service_detail }}"></td></tr>
 </tbody>
 <tbody>
+  <tr><td></td><td>
   {% macro time_option(hour, minute, time=none) -%}
     {% set display = "%02d:%02d"|format(hour, minute) %}
     <option value="{{ display }}"
@@ -47,8 +78,7 @@
   {%- endmacro %}
   
   {% macro time_fields(index, time) -%}
-  <tr><td></td><td>
-    <table>
+    <tbody>
       <tr><td>Days</td><td>
         {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
         <label><input type=checkbox
@@ -62,32 +92,52 @@
       <tr><td>Times</td><td>
         <select name=start_{{ index }}>
         {% for hour in range(24) %}
-          {{ time_option(hour, 0, time) }}
-          {{ time_option(hour, 30, time) }}
+          {{ time_option(hour, 0, time.start) }}
+          {{ time_option(hour, 30, time.start) }}
         {% endfor %}
         </select>
         -
         <select name=end_{{ index }}>
         {% for hour in range(24) %}
-          <option value={{ hour }}:00>{{ hour }}:00
-          <option value={{ hour }}:30>{{ hour }}:30
+          {{ time_option(hour, 0, time.end) }}
+          {{ time_option(hour, 30, time.end) }}
         {% endfor %}
         </select>
       </td></tr>
-    </table>
-  </td></tr>
+    </tbody>
   {%- endmacro %}
 
+  <table>
   {% for time in service.times %}
     {{ time_fields(loop.index0, time) }}
   {% endfor %}
-  {{ time_fields(service.times|length, none) }}
+  {% if not service.times or request.get('addtime') %}
+    {{ time_fields(service.times|length, none) }}
+  {% else %}
+    <tbody><tr><td colspan=2>
+      <a href="/edit?id={{ loc.key.id() }}&service_id={{ service.service_id }}&r={{ request.get('r') }}&addtime=y">
+        + Add Other Times
+      </a>
+    </td></tr></tbody>
+  {% endif %}
+  </table>
 
+  </td></tr>
 </tbody>
 <tbody>
-  <tr><td>Requires Ticket</td><td><input type=checkbox name=requires_ticket></td></tr>
-  <tr><td>Requires Local Address</td><td><input type=checkbox name=requires_local_addr></td></tr>
-  <tr><td>Requires Church Attendence</td><td><input type=checkbox name=requires_church_attend></td></tr>
+  <tr><td>Requires Ticket</td>
+      <td><input type=checkbox name=requires_ticket {{ checkedif(service.requires_ticket) }}></td>
+  </tr>
+  <tr><td>Requires Local Address</td>
+      <td><input type=checkbox name=requires_local_addr {{ checkedif(service.requires_local_addr) }}></td>
+  </tr>
+  <tr><td>Requires Church Attendence</td>
+      <td><input type=checkbox name=requires_church_attend {{ checkedif(service.requires_church_attend) }}></td>
+  </tr>
+  <tr><td>Extra Notes</td>
+      <td><textarea rows=10 cols=40 name=service_notes>{{ service.extra_notes }}</textarea>
+      </td>
+  </tr>
 </tbody>
 </table>
 <input type=submit>

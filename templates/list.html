@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+
+{% import "common.html" as common with context %}
+
 {% block title %}Results{% endblock %}
 {% block scripts %}
 
@@ -15,7 +18,7 @@
 </div>
 
 <div class="content">
-<h1>Food</h1>
+<h1>Free Eats</h1>
 
 <ul class="options">
 {% for option in options %}
@@ -33,41 +36,38 @@
   <div class="contact">
     <h2>
       {% if result.service_type %}
-        {{ _(result.service_type.name) }}
-        {% if result.service_detail %} : {{ result.service_detail}}{% endif %} 
+        {% if result.service_detail %}
+          {{ result.service_detail}}
+        {% else %}
+          {{ _(result.service_type.name) }}
+        {% endif %} 
         <br>
       {% endif %}
-      {{ result.name }}
     </h2>
 
     {% if result.website %} - <span class="website">{{ result.website }}</span>{% endif %}
 
-    {% if result.address %} - <span class="address">{{ result.address }}</span>{% endif %}
   </div>
   <div class="meals">
-    {% macro renderMeal(name, meal) -%}
-      {% if meal.days %}
-        <div class="meal">
-        <h3>{{ name }}</h3>
-        {{ meal.start }} - {{ meal.end }},
-        {% for day in meal.days %}
-          <span>
-          {{ ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day] }}
-          </span>
-        {% endfor %}
-        <ul>
-        {% for item in meal.menu %}
-          <li>{{ item }}
-        {% endfor %}
-        <ul>
-        </div>
-      {% endif %}
-    {%- endmacro %}
-
-    {% if result.breakfast %}{{ renderMeal('Breakfast', result.breakfast) }}{% endif %}
-    {% if result.lunch %}{{ renderMeal('Lunch', result.lunch) }}{% endif %}
-    {% if result.snack %}{{ renderMeal('Snack', result.snack) }}{% endif %}
-    {% if result.dinner %}{{ renderMeal('Dinner', result.dinner) }}{% endif %}
+    {% for service_time in result.service_times %}
+      <div class="meal">
+      {% for day in service_time.days %}
+        <b>
+        {{ ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day] }}
+        </b>
+      {% endfor %}
+      {{ common.timerange(service_time.start, service_time.end) }}
+      </div>
+    {% endfor %}
+    <div>
+      {{ result.name }}
+    </div>
+    {% for phone in result.phones %}
+      <div>{{ common.phone(phone) }}</div>
+    {% endfor %}
+    {% if result.address %}
+      <div><span class="address">{{ result.address }}</span></div>
+    {% endif %}
   </div>
   <div class="props">
     <ul>
@@ -77,8 +77,14 @@
       {% if result.requires_church_attend %}<li>Requires Church Attendence{% endif %}
     </ul>
   </div>
+  {% if result.service_notes %}
+    <div>{{ result.service_notes }}</div>
+  {% endif %}
   {% if result.id %}
+    <div>
+    Last modified: {{ common.timestamp(result.last_modified) }}
     <a href="/edit?id={{ result.id }}&service_id={{ result.service_id }}&r={{ request.path_qs|urlencode }}">Edit</a>
+    </div>
   {% endif %}
 
   <br clear=both>
@@ -86,6 +92,10 @@
   <li>No results 
 {% endfor %}
 </ul>
+
+<div>
+<a href="/edit?r={{ request.path_qs|urlencode }}">+ Add New</a>
+</div>
 
 <script>
 

@@ -1,0 +1,21 @@
+{% macro time(dttime, show_am_pm=true) -%}
+  {{ dttime.strftime('%I').lstrip('0') }}{% if dttime.minute > 0 -%}
+  :{{ dttime.strftime('%M') }}
+  {%- endif %}{% if show_am_pm -%}
+  {{ dttime.strftime('%p') }}
+  {%- endif %}
+{%- endmacro %}
+
+{% macro timerange(start, end) -%}
+  {{ time(start, show_am_pm=(start.strftime('%p') != end.strftime('%p'))) }}-{{ time(end) }}
+{%- endmacro %}
+
+{% macro phone(number) -%}
+  {% for part in number|string|batch(3) -%}
+    {% if not loop.first and not loop.last %}-{% endif %}{{ part|join }}
+  {%- endfor %}
+{%- endmacro %}
+
+{% macro timestamp(dt) -%}
+  {{ dt.replace(tzinfo=utc).astimezone(tz).strftime("%c") }} {{ tz.tzname(dt) }}
+{%- endmacro %}

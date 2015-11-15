@@ -1,5 +1,6 @@
-from datetime import time, datetime
+from datetime import time, datetime, timedelta, tzinfo
 import os
+import re
 from urlparse import urlparse, urlunparse
 import urllib
 
@@ -29,6 +30,24 @@ def urlencode_filter(s):
 
 JINJA_ENVIRONMENT.filters['urlencode'] = urlencode_filter
 
+class FixedOffsetTimeZone(tzinfo):
+  """Fixed offset in hours east from UTC."""
+
+  def __init__(self, offset, name):
+    self.__offset = timedelta(hours = offset)
+    self.__name = name
+
+  def utcoffset(self, dt):
+    return self.__offset
+
+  def tzname(self, dt):
+    return self.__name
+
+  def dst(self, dt):
+    return timedelta(0)
+      
+UTC = FixedOffsetTimeZone(0, 'UTC')
+PST = FixedOffsetTimeZone(-8, 'PST')
 
 #USER_AGENT = 'Bridge/0.0.1' 
 #OHANA = Ohana('http://api.smc-connect.org', USER_AGENT)
@@ -38,7 +57,10 @@ BACKEND = AppEngineBackend()
 
 class BaseHandler(webapp2.RequestHandler):
   def write_template(self, template_name, params={}):
-    params.update(request=self.request)
+    params.update(
+      request=self.request,
+      tz=PST,
+      utc=UTC)
     self.response.write(
         JINJA_ENVIRONMENT.get_template(template_name).render(params))
 
@@ -78,7 +100,7 @@ class EditHandler(BaseHandler):
         geo=LatLong.to_geo(LatLong.from_str(self.request.get('location'))),
         phones=[int(re.sub(r'[^0-9]+', '', p))
                 for p in self.request.get('phones').splitlines()
-                if len(p.strip()) == 0],
+                if len(p.strip()) > 0],
         websites=[self.request.get('website')],
         accessible='accessible' in self.request.arguments())
     
@@ -95,7 +117,7 @@ class EditHandler(BaseHandler):
         requires_local_addr='requires_local_addr' in self.request.arguments(),
         requires_church_attend=(
             'requires_church_attend' in self.request.arguments()),
-        extra_notes=self.request.get('extra_notes'))
+        extra_notes=self.request.get('service_notes'))
 
     service.times = []
     num_times = min(100, int(self.request.get('num_times')))
