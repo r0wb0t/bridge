@@ -1,4 +1,4 @@
-from datetime import time, datetime, timedelta, tzinfo
+from datetime import time, datetime, timedelta, tzinfo, date
 import os
 import re
 from urlparse import urlparse, urlunparse
@@ -23,6 +23,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True)
 JINJA_ENVIRONMENT.install_null_translations()
 
+JINJA_ENVIRONMENT.globals['date'] = date
 ServiceType.export_to(JINJA_ENVIRONMENT)
 
 def urlencode_filter(s):
@@ -80,7 +81,10 @@ class EditHandler(BaseHandler):
       if self.request.get('service_id'):
         service = loc.service(int(self.request.get('service_id')))
 
+    all_locs = Location.query().order(Location.name)
+
     self.write_template('form.html', {
+      'all_locs': all_locs,
       'loc': loc,
       'service': service,
       'redirect_to': self.request.get('r'),
@@ -104,33 +108,49 @@ class EditHandler(BaseHandler):
         websites=[self.request.get('website')],
         accessible='accessible' in self.request.arguments())
     
-    service = None
-    if self.request.get('service_id'):
-      service = loc.service(int(self.request.get('service_id')))
-    if service is None:
-      service = loc.add_service()
+    service_type = self.request.get('service_type')
+    service_detail = self.request.get('service_detail')
 
-    service.populate(
-        service_type=ServiceType.for_name(self.request.get('service_type')),
-        service_detail=self.request.get('service_detail'),
-        requires_ticket='requires_ticket' in self.request.arguments(),
-        requires_local_addr='requires_local_addr' in self.request.arguments(),
-        requires_church_attend=(
-            'requires_church_attend' in self.request.arguments()),
-        extra_notes=self.request.get('service_notes'))
+    if service_type or service_detail:
+      service = None
+      if self.request.get('service_id'):
+        service = loc.service(int(self.request.get('service_id')))
+      if service is None:
+        service = loc.add_service()
 
-    service.times = []
-    num_times = min(100, int(self.request.get('num_times')))
-    for i in range(num_times):
-      time_arg = lambda name: '%s_%s' % (name, i)
-      days=[days.index(d) for d in days
-            if time_arg('days_%s' % d) in self.request.arguments()]
-      if days:
-        parse_time = lambda s: datetime.strptime(s, '%H:%M').time()
-        service.times.append(ServiceTime(
-            start=parse_time(self.request.get(time_arg('start'))),
-            end=parse_time(self.request.get(time_arg('end'))),
-            days=days))
+      service.populate(
+          service_type=(service_type
+              and ServiceType.for_name(service_type)
+              or None),
+          service_detail=service_detail,
+          requires_ticket='requires_ticket' in self.request.arguments(),
+          requires_local_addr='requires_local_addr' in self.request.arguments(),
+          requires_church_attend=(
+              'requires_church_attend' in self.request.arguments()),
+          extra_notes=self.request.get('service_notes'))
+
+      service.times = []
+      num_times = min(100, int(self.request.get('num_times')))
+      for i in range(num_times):
+        time_arg = lambda name: '%s_%s' % (name, i)
+        days=[days.index(d) for d in days
+              if time_arg('days_%s' % d) in self.request.arguments()]
+        if days:
+          parse_time = lambda s: datetime.strptime(s, '%H:%M').time()
+          service.times.append(ServiceTime(
+              start=parse_time(self.request.get(time_arg('start'))),
+              end=parse_time(self.request.get(time_arg('end'))),
+              days=days))
+
+      service.not_dates = []
+      num_not_dates = min(100, int(self.request.get('num_not_dates')))
+      for i in range(num_times):
+        arg = lambda name: 'not_date_%s_%s' % (i, name)
+        if self.request.get(arg('month')):
+          service.not_dates.append(date(
+              2000,
+              int(self.request.get(arg('month'))),
+              int(self.request.get(arg('day')))));
    
     loc.put()
     redirect_url = self.request.get('r')

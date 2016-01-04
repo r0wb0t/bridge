@@ -7,7 +7,7 @@ body, td {
 }
 
 body.full {
-  background-color: #008d9e;
+  background-color: #dfa554;
   color: #fff;
 }
 
@@ -33,7 +33,7 @@ body.full .content {
 
 body.page .header {
   padding: 10px;
-  background-color: #008d9e;
+  background-color: #dfa554;
   color: #fff;
 }
 
@@ -58,7 +58,7 @@ body.full a.button, body.full button.button {
   padding: 20px;
   width: 10em;
   background-color: #fff;
-  color: #008d9e;
+  color: #dfa554;
   font-weight: normal;
   text-decoration: none;
   border-style: none;

@@ -5,8 +5,55 @@
 {% block classes %}page edit{% endblock %}
 {% block body %}
 
+<style>
+
+#locations {
+  float: left;
+  width: 20em;
+  border: 1px solid #ccc;
+  border-spacing: 0;
+}
+
+#locations td {
+  padding: 10px;
+}
+
+#locations a {
+  color: #000;
+}
+
+#locations .current-loc {
+  background-color: #dfa554;
+}
+
+#locations .current-loc a {
+  color: #fff;
+  text-decoration: none;
+}
+
+#editform {
+  margin-left: 20em;
+  padding-left: 20px;
+}
+
+input.save {
+  background-color: #dfa554;
+  font-size: larger;
+  border-style: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.rem {
+  float: right;
+  font-size: smaller;
+}
+
+</style>
+
 <div class="header">
-<a href="/">Bridge Resource Finder</a>
+<a href="/">Free Print Shop</a>
 </div>
 
 {% macro checkedif(cond) -%}
@@ -14,11 +61,30 @@
 {%- endmacro %}
 
 <div class="content">
-<form method=post>
+
+<table id=locations>
+{% if not loc %}
+  <tr><td class="current-loc">New Location</td></tr>
+{% else %}
+  <tr><td><a href="/edit">New Location</a></td></tr>
+{% endif %}
+{% for other_loc in all_locs %}
+  <tr><td class="{% if loc and loc.key.id() == other_loc.key.id() %}current-loc{% endif %}">
+        <a href="/edit?id={{ other_loc.key.id() }}">{{ other_loc.name }}</a>
+      </td>
+  </tr>
+{% endfor %}
+</table>
+
+<form method=post id=editform>
 <input type=hidden name=id value="{{ loc.key.id() if loc }}">
 <input type=hidden name=service_id value="{{ service.service_id }}">
 <input type=hidden name=r value="{{ redirect_to }}">
 <input type=hidden name=num_times value="{{ (service.times|length) + 1 if service else 1 }}">
+<input type=hidden name=num_not_dates value="{{ (service.not_dates|length) + 1 if service else 0 }}">
+
+<input type=submit class="save" value="Save" style="position:fixed;right:10px;">
+
 <table>
 <tbody>
   <tr><td>Name</td><td><input name=name value="{{ loc.name }}"></td></tr>
@@ -32,7 +98,7 @@
       </td>
   </tr>
   <tr><td>Website</td><td><input name=website></td></tr>
-  <tr><td>Wheelchair Access</td>
+  <tr><td>ADA Accessible</td>
       <td><input type=checkbox name=accessible {{ checkedif(loc.accessible) }}></td></tr>
 </tbody>
 <tbody>
@@ -43,104 +109,138 @@
         {{ other_service.service_detail }}
       </a>
     {% endfor %}
-    {% if service %}
-      <a href="/edit?id={{ loc.key.id() }}&r={{ request.get('r') }}">+ Add New Service</a>
-    {% else %}
-      <span class="service-tab self">New Service</span>
+    {% if loc %}
+      {% if request.get('addservice') %}
+        <span class="service-tab self">New Service</span>
+      {% else %}
+        <a href="/edit?id={{ loc.key.id() }}&addservice=y&r={{ request.get('r') }}">+ Add New Service</a>
+      {% endif %}
     {% endif %}
     </th>
   </tr>
 </tbody>
-<tbody>
-  <tr><td>Service Type</td><td>
-  <select name=service_type>
-    <option>
-    {% for service_type in ServiceType.names() %}
-      <option value="{{ service_type }}"
-              {% if service and
-                    service.service_type == ServiceType.for_name(service_type) %}
+{% if service or request.get('addservice') %}
+  <tbody>
+    <tr><td>Service Type</td><td>
+    <select name=service_type>
+      <option>
+      {% for service_type in ServiceType.names() %}
+        <option value="{{ service_type }}"
+                {% if service and
+                      service.service_type == ServiceType.for_name(service_type) %}
+                  selected
+                {% endif %}>{{ _(service_type) }}
+      {% endfor %}
+    </select>
+    </td></tr>
+    <tr><td>Service Detail</td>
+        <td><input name=service_detail value="{{ service.service_detail }}"></td></tr>
+  </tbody>
+  <tbody>
+    <tr><td></td><td>
+    {% macro time_option(hour, minute, time=none) -%}
+      {% set display = "%02d:%02d"|format(hour, minute) %}
+      <option value="{{ display }}"
+              {% if time and time.hour == hour and time.minute == minute %}
                 selected
-              {% endif %}>{{ _(service_type) }}
+              {% endif %}>{{ display }}
+    {%- endmacro %}
+    
+    {% macro time_fields(index, time) -%}
+      <tbody>
+        <tr><td>Days</td><td>
+          {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
+          <label><input type=checkbox
+                        name=days_{{ day.lower() }}_{{ index }}
+                        {% if time and loop.index0 in time.days %}
+                          checked
+                        {% endif %}>
+                {{ day }}</label>
+          {% endfor %}
+        </td></tr>
+        <tr><td>Times</td><td>
+          <a href="#" class="rem">remove</a>
+          <select name=start_{{ index }}>
+          {% for hour in range(24) %}
+            {{ time_option(hour, 0, time.start) }}
+            {{ time_option(hour, 30, time.start) }}
+          {% endfor %}
+          </select>
+          -
+          <select name=end_{{ index }}>
+          {% for hour in range(24) %}
+            {{ time_option(hour, 0, time.end) }}
+            {{ time_option(hour, 30, time.end) }}
+          {% endfor %}
+          </select>
+        </td></tr>
+      </tbody>
+    {%- endmacro %}
+    
+    {% macro date_fields(prefix, d) -%}
+      <select name={{ prefix }}_month>
+      {% for month in range(1, 13) %}
+        <option value="{{ month }}"
+                {% if d and d.month == month %}selected{% endif %}>
+            {{ date(2000, month, 1).strftime('%B') }}
+      {% endfor %}
+      </select>
+      <input name={{ prefix }}_day type=number min=1 max=31 step=1 value="{{d.day if d else 1}}">
+    {%- endmacro %}
+
+    <table>
+    {% for time in service.times %}
+      {{ time_fields(loop.index0, time) }}
     {% endfor %}
-  </select>
-  </td></tr>
-  <tr><td>Service Detail</td>
-      <td><input name=service_detail value="{{ service.service_detail }}"></td></tr>
-</tbody>
-<tbody>
-  <tr><td></td><td>
-  {% macro time_option(hour, minute, time=none) -%}
-    {% set display = "%02d:%02d"|format(hour, minute) %}
-    <option value="{{ display }}"
-            {% if time and time.hour == hour and time.minute == minute %}
-              selected
-            {% endif %}>{{ display }}
-  {%- endmacro %}
-  
-  {% macro time_fields(index, time) -%}
-    <tbody>
-      <tr><td>Days</td><td>
-        {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
-        <label><input type=checkbox
-                      name=days_{{ day.lower() }}_{{ index }}
-                      {% if time and loop.index0 in time.days %}
-                        checked
-                      {% endif %}>
-              {{ day }}</label>
+    {% if not service.times or request.get('addtime') %}
+      {{ time_fields(service.times|length, none) }}
+    {% else %}
+      {% if service.not_dates or request.get('addexception') %}
+        <tbody>
+        {% for d in service.not_dates %}
+          <tr><td>{% if loop.first %}Except{% endif %}</td><td>
+            <a href="#" class="rem">remove</a>
+            {{ date_fields('not_date_' ~ loop.index0, d) }}
+          </td></tr>
         {% endfor %}
-      </td></tr>
-      <tr><td>Times</td><td>
-        <select name=start_{{ index }}>
-        {% for hour in range(24) %}
-          {{ time_option(hour, 0, time.start) }}
-          {{ time_option(hour, 30, time.start) }}
-        {% endfor %}
-        </select>
-        -
-        <select name=end_{{ index }}>
-        {% for hour in range(24) %}
-          {{ time_option(hour, 0, time.end) }}
-          {{ time_option(hour, 30, time.end) }}
-        {% endfor %}
-        </select>
-      </td></tr>
-    </tbody>
-  {%- endmacro %}
+        {% if request.get('addexception') %}
+          <tr><td>{% if service.not_dates|length == 0 %}Except{% endif %}</td><td>
+            {{ date_fields('not_date_' ~ service.not_dates|length, none) }}
+          </td></tr>
+        {% endif %}
+        </tbody>
+      {% endif %}
+      <tbody><tr><td colspan=2>
+        <a href="/edit?id={{ loc.key.id() }}&service_id={{ service.service_id }}&r={{ request.get('r') }}&addtime=y">
+          + Add Other Times
+        </a>
+        /
+        <a href="/edit?id={{ loc.key.id() }}&service_id={{ service.service_id }}&r={{ request.get('r') }}&addexception=y">
+          + Add Exception
+        </a>
+      </td></tr></tbody>
+    {% endif %}
+    </table>
 
-  <table>
-  {% for time in service.times %}
-    {{ time_fields(loop.index0, time) }}
-  {% endfor %}
-  {% if not service.times or request.get('addtime') %}
-    {{ time_fields(service.times|length, none) }}
-  {% else %}
-    <tbody><tr><td colspan=2>
-      <a href="/edit?id={{ loc.key.id() }}&service_id={{ service.service_id }}&r={{ request.get('r') }}&addtime=y">
-        + Add Other Times
-      </a>
-    </td></tr></tbody>
-  {% endif %}
-  </table>
-
-  </td></tr>
-</tbody>
-<tbody>
-  <tr><td>Requires Ticket</td>
-      <td><input type=checkbox name=requires_ticket {{ checkedif(service.requires_ticket) }}></td>
-  </tr>
-  <tr><td>Requires Local Address</td>
-      <td><input type=checkbox name=requires_local_addr {{ checkedif(service.requires_local_addr) }}></td>
-  </tr>
-  <tr><td>Requires Church Attendence</td>
-      <td><input type=checkbox name=requires_church_attend {{ checkedif(service.requires_church_attend) }}></td>
-  </tr>
-  <tr><td>Extra Notes</td>
-      <td><textarea rows=10 cols=40 name=service_notes>{{ service.extra_notes }}</textarea>
-      </td>
-  </tr>
-</tbody>
+    </td></tr>
+  </tbody>
+  <tbody>
+    <tr><td>Requires Ticket</td>
+        <td><input type=checkbox name=requires_ticket {{ checkedif(service.requires_ticket) }}></td>
+    </tr>
+    <tr><td>Requires Local Address</td>
+        <td><input type=checkbox name=requires_local_addr {{ checkedif(service.requires_local_addr) }}></td>
+    </tr>
+    <tr><td>Requires Church Attendence</td>
+        <td><input type=checkbox name=requires_church_attend {{ checkedif(service.requires_church_attend) }}></td>
+    </tr>
+    <tr><td>Extra Notes</td>
+        <td><textarea rows=10 cols=40 name=service_notes>{{ service.extra_notes }}</textarea>
+        </td>
+    </tr>
+  </tbody>
+{% endif %}
 </table>
-<input type=submit>
 </form>
 </div>
 {% endblock %}

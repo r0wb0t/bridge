@@ -38,6 +38,7 @@ class Service(ndb.Model):
   service_detail = ndb.StringProperty()
 
   times = ndb.LocalStructuredProperty(ServiceTime, repeated=True)
+  not_dates = ndb.DateProperty(repeated=True)
 
   requires_ticket = ndb.BooleanProperty()
   requires_local_addr = ndb.BooleanProperty()
