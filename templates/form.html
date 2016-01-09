@@ -92,7 +92,7 @@ input.save {
   <tr><td>Geo Location</td>
       <td><input name=location
                  id=location
-                 value="{{ loc.geo }}"
+                 value="{{ loc.geo if loc.geo }}"
                  onchange="onGeoChange(this)"
                  style="width:175px"><br>
           <img src="" width=175 height=100 id=map>
