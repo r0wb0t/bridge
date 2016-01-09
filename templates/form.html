@@ -83,13 +83,21 @@ input.save {
 <input type=hidden name=num_times value="{{ (service.times|length) + 1 if service else 1 }}">
 <input type=hidden name=num_not_dates value="{{ (service.not_dates|length) + 1 if service else 0 }}">
 
-<input type=submit class="save" value="Save" style="position:fixed;right:10px;">
+<input type=button class="save" value="Save" style="position:fixed;right:10px;" onclick="form.submit()">
 
 <table>
 <tbody>
   <tr><td>Name</td><td><input name=name value="{{ loc.name }}"></td></tr>
-  <tr><td>Address</td><td><input name=address></td></tr>
-  <tr><td>Geo Location</td><td><input name=location></td></tr>
+  <tr><td>Address</td><td><input name=address id=address size="64" value="{{ loc.address }}"></td></tr>
+  <tr><td>Geo Location</td>
+      <td><input name=location
+                 id=location
+                 value="{{ loc.geo }}"
+                 onchange="onGeoChange(this)"
+                 style="width:175px"><br>
+          <img src="" width=175 height=100 id=map>
+      </td>
+  </tr>
   <tr><td>Phones</td>
       <td>
         <textarea name=phones>{% for phone in loc.phones -%}
@@ -97,7 +105,7 @@ input.save {
         {%- endfor %}</textarea>
       </td>
   </tr>
-  <tr><td>Website</td><td><input name=website></td></tr>
+  <tr><td>Website</td><td><input name=website id=website value="{{ loc.websites|join(' ') }}"></td></tr>
   <tr><td>ADA Accessible</td>
       <td><input type=checkbox name=accessible {{ checkedif(loc.accessible) }}></td></tr>
 </tbody>
@@ -214,7 +222,7 @@ input.save {
         <a href="/edit?id={{ loc.key.id() }}&service_id={{ service.service_id }}&r={{ request.get('r') }}&addtime=y">
           + Add Other Times
         </a>
-        /
+        &nbsp;/&nbsp;
         <a href="/edit?id={{ loc.key.id() }}&service_id={{ service.service_id }}&r={{ request.get('r') }}&addexception=y">
           + Add Exception
         </a>
@@ -243,4 +251,59 @@ input.save {
 </table>
 </form>
 </div>
+
+<script>
+
+function initMap() {
+  var sfBounds = new google.maps.LatLngBounds(
+      new google.maps.LatLng(37.643053, -122.526398),
+      new google.maps.LatLng(37.814666, -122.357483));
+
+  var geocoder = new google.maps.Geocoder();
+  var autocomplete = new google.maps.places.Autocomplete(
+      document.getElementById('address'),
+      {
+        bounds: sfBounds
+      });
+  autocomplete.addListener('place_changed', function() {
+    var place = autocomplete.getPlace();
+    document.getElementById('location').value =
+        place.geometry.location.lat() + ',' + place.geometry.location.lng();
+    onGeoChange(document.getElementById('location'));
+    if (place.website && document.getElementById('website').value == '') {
+      document.getElementById('website').value = place.website; 
+    }
+    if (place.types[0] == 'street_address') {
+      document.getElementById('address').value = place.formatted_address;
+    } else {
+      geocoder.geocode({location: place.geometry.location}, function(results) {
+        if (results[0]) {
+          document.getElementById('address').value = results[0].formatted_address;
+        }
+      });
+    }
+  });
+
+  var geoInput = document.getElementById('location');
+  if (geoInput.value != '') {
+    onGeoChange(geoInput);
+  }
+}
+
+function onGeoChange(input) {
+  var latlng = input.value;
+  var map = document.getElementById('map');
+  map.src = 'https://maps.googleapis.com/maps/api/staticmap?' +
+      'key=AIzaSyBPLQNqjHF0Y_u8yAwmSZInEIJoWnlgFu8' +
+      '&center=' + escape(latlng) +
+      '&zoom=15' +
+      '&size=' + escape(map.width + 'x' + map.height) +
+      '&markers=' + escape('|' + latlng);
+}
+
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBPLQNqjHF0Y_u8yAwmSZInEIJoWnlgFu8&libraries=places&callback=initMap">
+</script>
+
 {% endblock %}

@@ -59,12 +59,12 @@ class LatLong:
     self.lat = lat
     self.lon = lon
 
-  def to_geo(self):
+  def geo(self):
     return ndb.GeoPt(self.lat, self.lon)
 
   @classmethod
   def to_geo(cls, latlong):
-    return latlong and latlong.to_geo() or None
+    return latlong and latlong.geo() or None
 
   @classmethod
   def from_geo(cls, geopt):
