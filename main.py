@@ -114,6 +114,7 @@ class EditHandler(BaseHandler):
         websites=[self.request.get('website')],
         accessible='accessible' in self.request.arguments())
     
+    service = None
     service_type = self.request.get('service_type')
     service_detail = self.request.get('service_detail')
 
@@ -162,10 +163,11 @@ class EditHandler(BaseHandler):
     redirect_url = self.request.get('r')
     if not redirect_url:
       redirect_url = '/edit?id=%s' % loc.key.id()
-      if self.request.get('service_id'):
+      if service:
         redirect_url = '%s&service_id=%s' % (
             redirect_url,
-            self.request.get('service_id'))
+            service.service_id)
+        
     self.redirect(redirect_url)
 
 
