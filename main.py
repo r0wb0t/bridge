@@ -238,7 +238,7 @@ def handlers_for(criteria, slug):
         'origin': config.LOCATION_CRITERION.get_geo(self.request),
         'options': options,
         'results': results,
-        'now': datetime.now(),
+        'now': datetime.now() - timedelta(hours=8),
       })
 
 

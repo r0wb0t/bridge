@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import itertools
 from collections import defaultdict
 
@@ -54,7 +54,7 @@ class AppEngineBackend:
 class Ranker(object):
   def __init__(self, query):
     self.query = query
-    self.now = datetime.now()
+    self.now = datetime.now() - timedelta(hours=8)
 
   def rerank(self, results):
     results = list(results)
