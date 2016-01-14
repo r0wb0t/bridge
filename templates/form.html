@@ -87,7 +87,7 @@ input.save {
 
 <table>
 <tbody>
-  <tr><td>Name</td><td><input name=name value="{{ loc.name }}"></td></tr>
+  <tr><td>Name</td><td><input name=name id=name value="{{ loc.name }}"></td></tr>
   <tr><td>Address</td><td><input name=address id=address size="64" value="{{ loc.address }}"></td></tr>
   <tr><td>Geo Location</td>
       <td><input name=location
@@ -272,6 +272,9 @@ function initMap() {
     onGeoChange(document.getElementById('location'));
     if (place.website && document.getElementById('website').value == '') {
       document.getElementById('website').value = place.website; 
+    }
+    if (place.name && document.getElementById('name').value == '') {
+      document.getElementById('name').value = place.name; 
     }
     if (place.types[0] == 'street_address') {
       document.getElementById('address').value = place.formatted_address;

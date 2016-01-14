@@ -160,7 +160,7 @@ class EditHandler(BaseHandler):
    
     loc.put()
     redirect_url = self.request.get('r')
-    self.redirect(redirect_url and redirect_url or '/edit')
+    self.redirect(redirect_url and redirect_url or ('/edit?id=%s' % loc.key.id()))
 
 
 def handlers_for(criteria, slug):
@@ -229,7 +229,8 @@ def handlers_for(criteria, slug):
       self.write_template('list.html', {
         'origin': config.LOCATION_CRITERION.get_geo(self.request),
         'options': options,
-        'results': results
+        'results': results,
+        'now': datetime.now(),
       })
 
 

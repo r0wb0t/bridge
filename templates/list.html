@@ -47,18 +47,6 @@
 
     {% if result.website %} - <span class="website">{{ result.website }}</span>{% endif %}
 
-  </div>
-  <div class="meals">
-    {% for service_time in result.service_times %}
-      <div class="meal">
-      {% for day in service_time.days %}
-        <b>
-        {{ ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day] }}
-        </b>
-      {% endfor %}
-      {{ common.timerange(service_time.start, service_time.end) }}
-      </div>
-    {% endfor %}
     <div>
       {{ result.name }}
     </div>
@@ -68,10 +56,39 @@
     {% if result.address %}
       <div><span class="address">{{ result.address }}</span></div>
     {% endif %}
+
+  </div>
+  <div class="meals">
+    <table class="timetable">
+    <tr>
+    {% for day in range(7) %}
+      <th {% if day == now.weekday() %}class="today"{% endif %}>
+        {{ ['Monday', 'Tueday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][day] }}
+      </th>
+    {% endfor %}
+    </tr>
+    <tr>
+    {% for day in range(7) %}
+      <td {% if day == now.weekday() %}class="today"{% endif %}>
+        {% for service_time in result.service_days[day] %}
+          {{ common.timerange(service_time.start, service_time.end) }}
+        {% endfor %}
+      </td>
+    {% endfor %}
+    </tr>
+    </table>
+    {% for service_time in result.service_times %}
+      <div class="meal">
+      {% for day in service_time.days %}
+        <b>
+        </b>
+      {% endfor %}
+      </div>
+    {% endfor %}
   </div>
   <div class="props">
     <ul>
-      {% if result.accessible %}<li>Wheelchair Access{% endif %}
+      {% if result.accessible %}<li>ADA Accessible{% endif %}
       {% if result.requires_ticket %}<li>Requires Ticket{% endif %}
       {% if result.requires_local_addr %}<li>Requires Local Address{% endif %}
       {% if result.requires_church_attend %}<li>Requires Church Attendence{% endif %}
@@ -81,7 +98,7 @@
     <div>{{ result.service_notes }}</div>
   {% endif %}
   {% if result.id %}
-    <div>
+    <div class="metadata">
     Last modified: {{ common.timestamp(result.last_modified) }}
     <a href="/edit?id={{ result.id }}&service_id={{ result.service_id }}&r={{ request.path_qs|urlencode }}">Edit</a>
     </div>
@@ -94,7 +111,7 @@
 </ul>
 
 <div>
-<a href="/edit?r={{ request.path_qs|urlencode }}">+ Add New</a>
+<a href="/edit">+ Add New</a>
 </div>
 
 <script>

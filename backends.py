@@ -1,4 +1,6 @@
+from datetime import datetime
 import itertools
+from collections import defaultdict
 
 from models import Location
 from query import Field, LatLong, SearchResult
@@ -12,7 +14,7 @@ class AppEngineBackend:
       q.filter(Location.accessible == query.get(Field.ACCESSIBLE))
 
     results = itertools.chain(*(self.make_results(loc, query) for loc in q))
-    return self.rerank(results, query)  
+    return Ranker(query).rerank(results)  
 
   def make_results(self, loc, query):
     results = []
@@ -30,6 +32,13 @@ class AppEngineBackend:
         result.service_type = service.service_type
         result.service_detail = service.service_detail
         result.service_times = service.times
+        result.service_days = defaultdict(list)
+        for time in result.service_times:
+          for day in time.days:
+            result.service_days[day].append(time)
+        for times in result.service_days.viewvalues():
+          times.sort(key=lambda time: time.start)
+
         result.service_notes = service.extra_notes
         result.last_modified = loc.last_modified
         results.append(result)
@@ -41,5 +50,24 @@ class AppEngineBackend:
   def matches_service_time(self, query, service_time):
     return True
 
-  def rerank(self, results, query):
-    return list(results)
+
+class Ranker(object):
+  def __init__(self, query):
+    self.query = query
+    self.now = datetime.now()
+
+  def rerank(self, results):
+    results = list(results)
+    results.sort(key=self.score)
+    return results
+
+  def score(self, result):
+    print result.name,result.service_detail,self.dayscore(result) 
+    return self.dayscore(result)
+
+  def dayscore(self, result):
+    days = set()
+    for service_time in result.service_times:
+      for day in service_time.days:
+        days.add(day)
+    return min((day - self.now.weekday()) % 7 for day in days)

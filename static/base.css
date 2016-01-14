@@ -89,7 +89,7 @@ body.page .content {
   list-style-type: none;
   padding: 0;
   margin: 0;
-  max-width: 50em;
+  display: inline-block;
 }
 
 .results > li {
@@ -98,17 +98,42 @@ body.page .content {
 
 .results h2 {
   margin: 0;
-  display: inline;
+  display: inline-block;
 }
 
 .results .contact {
-  margin-bottom: 5px;
   padding: 5px;
-  background-color: #ccc;
+  background-color: #eee;
 }
 
 .results .meals {
-  padding: 5px;
+}
+
+.results .timetable {
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.results .timetable td, .timetable th {
+  border: 1px solid #ccc;
+  width: 9em;
+  text-align: center;
+}
+
+.results .timetable th {
+}
+
+.results .today {
+  background-color: #dfa554;
+  color: #fff;
+  border-top-color: #dfa554;
+  border-bottom-color: #dfa554;
+}
+
+.results .metadata {
+  clear: both;
+  text-align:right;
+  font-size: smaller;
 }
 
 .website {
@@ -117,9 +142,9 @@ body.page .content {
 
 .map {
   float: right;
-  width: 300px;
-  height: 300px;
-  background-color: #ccc;
+  width: 256px;
+  height: 256px;
+  background-color: #eee;
 }
 
 body.edit table {

@@ -163,6 +163,6 @@ class YesNoCriterion(Criterion):
   def desc_value(self, request):
     value = self.get_value(request)
     if value is None:
-      return 'Unknown'
+      return 'Any'
     else:
       return [self.no_desc, self.yes_desc][value]
