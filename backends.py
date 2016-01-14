@@ -62,7 +62,6 @@ class Ranker(object):
     return results
 
   def score(self, result):
-    print result.name,result.service_detail,self.dayscore(result) 
     return self.dayscore(result)
 
   def dayscore(self, result):
