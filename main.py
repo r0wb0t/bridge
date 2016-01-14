@@ -160,7 +160,13 @@ class EditHandler(BaseHandler):
    
     loc.put()
     redirect_url = self.request.get('r')
-    self.redirect(redirect_url and redirect_url or ('/edit?id=%s' % loc.key.id()))
+    if not redirect_url:
+      redirect_url = '/edit?id=%s' % loc.key.id()
+      if self.request.get('service_id'):
+        redirect_url = '%s&service_id=%s' % (
+            redirect_url,
+            self.request.get('service_id'))
+    self.redirect(redirect_url)
 
 
 def handlers_for(criteria, slug):
