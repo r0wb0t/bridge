@@ -113,9 +113,10 @@ class LocationCriterion(Criterion):
   def postprocess_results(self, request, results):
     geo = self.get_geo(request)
     if geo is not None:
-      results.sort(
-          by_closeness_to(geo),
-          key=lambda r: r.location)
+      pass
+      #results.sort(
+      #    by_closeness_to(geo),
+      #    key=lambda r: r.location)
 
 
 class YesNoCriterion(Criterion):

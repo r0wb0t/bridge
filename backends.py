@@ -69,4 +69,6 @@ class Ranker(object):
     for service_time in result.service_times:
       for day in service_time.days:
         days.add(day)
+    if len(days) == 0:
+      return 10
     return min((day - self.now.weekday()) % 7 for day in days)
