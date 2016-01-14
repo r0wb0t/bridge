@@ -8,6 +8,7 @@ import jinja2
 import webapp2
 
 from google.appengine.ext import ndb
+from google.appengine.api import users
 
 import config
 from models import Location, Service, ServiceTime
@@ -69,6 +70,11 @@ class BaseHandler(webapp2.RequestHandler):
 class MainHandler(BaseHandler):
   def get(self):
     self.write_template('index.html')
+
+
+class LogoutHandler(BaseHandler):
+  def get(self):
+    self.redirect(users.create_logout_url('/'))
 
 
 class EditHandler(BaseHandler):
@@ -235,6 +241,7 @@ def handlers_for(criteria, slug):
 
 app = webapp2.WSGIApplication(
   [('/', MainHandler),
+   ('/logout', LogoutHandler),
    ('/edit', EditHandler)] +
       handlers_for(config.FOOD_CRITERIA, 'food'),
   debug=True)
