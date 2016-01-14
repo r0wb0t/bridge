@@ -98,7 +98,7 @@ class EditHandler(BaseHandler):
 
   @ndb.transactional
   def post(self):
-    days = ['mon','tue','wed','thu','fri','sat','sun']
+    day_names = ['mon','tue','wed','thu','fri','sat','sun']
     item = None
     if self.request.get('id'):
       loc = Location.get_by_id(int(self.request.get('id')))
@@ -140,7 +140,7 @@ class EditHandler(BaseHandler):
       num_times = min(100, int(self.request.get('num_times')))
       for i in range(num_times):
         time_arg = lambda name: '%s_%s' % (name, i)
-        days=[days.index(d) for d in days
+        days=[day_names.index(d) for d in day_names
               if time_arg('days_%s' % d) in self.request.arguments()]
         if days:
           parse_time = lambda s: datetime.strptime(s, '%H:%M').time()
