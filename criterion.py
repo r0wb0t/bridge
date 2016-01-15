@@ -2,7 +2,7 @@ import urllib
 import urlparse
 
 from geo_utils import by_closeness_to
-from query import LatLong
+from datamodel import LatLong
 
 # Criterion.
 #

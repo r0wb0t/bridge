@@ -1,9 +1,15 @@
 from google.appengine.ext import ndb
 
+from appengine.backend import AppEngineBackend
 from criterion import Criterion, LocationCriterion, YesNoCriterion 
-from models import KioskLocation, Location
-from query import Field
+from appengine.models import KioskLocation, Location
+from datamodel import Field
 
+
+#USER_AGENT = 'Bridge/0.0.1' 
+#OHANA = Ohana('http://api.smc-connect.org', USER_AGENT)
+#BACKEND = OhanaBackend(OHANA)
+BACKEND = AppEngineBackend()
 
 DEFAULT_KIOSK = KioskLocation(
     name='Project Homeless Connect',

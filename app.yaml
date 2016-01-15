@@ -23,7 +23,7 @@ handlers:
   login: required
 
 error_handlers:
-  - file: default_error.html
+  - file: templates/default_error.html
 
 libraries:
 - name: webapp2

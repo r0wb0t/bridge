@@ -1,5 +1,5 @@
 from google.appengine.ext import ndb
-from query import ServiceType
+from datamodel import ServiceType
 
 
 class EnumProperty(ndb.IntegerProperty):

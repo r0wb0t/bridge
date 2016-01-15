@@ -2,11 +2,12 @@ from datetime import datetime, timedelta
 import itertools
 from collections import defaultdict
 
-from models import Location
-from query import Field, LatLong, SearchResult
-    
+from appengine.models import Location
+from datamodel import Field, LatLong, SearchResult
+from backendbase import BackendBase
 
-class AppEngineBackend:
+
+class AppEngineBackend(BackendBase):
   def search(self, query):
     q = Location.query()
 
