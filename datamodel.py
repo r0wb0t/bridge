@@ -1,4 +1,5 @@
 from google.appengine.ext import ndb
+from protorpc import messages
 
 import re
 
@@ -52,6 +53,15 @@ class Enum(object):
 class ServiceType(Enum):
   MEAL = 1
   FREE_FOOD = 2
+
+
+class UserProfile(messages.Message):
+  user_id = messages.StringField(1, required=True)
+
+  is_admin = messages.BooleanField(2, default=False)
+  wants_admin = messages.BooleanField(3, default=False)
+
+  email = messages.StringField(4, required=False)
 
 
 class LatLong:

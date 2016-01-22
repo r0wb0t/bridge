@@ -1,5 +1,7 @@
 from google.appengine.ext import ndb
-from datamodel import ServiceType
+from google.appengine.ext.ndb.msgprop import MessageProperty
+
+import datamodel
 
 
 class EnumProperty(ndb.IntegerProperty):
@@ -15,6 +17,29 @@ class EnumProperty(ndb.IntegerProperty):
 
   def _from_base_type(self, value):
     return self.enum_type.for_number(value)
+
+
+class UserProfile(ndb.Model):
+  message = MessageProperty(
+      datamodel.UserProfile,
+      indexed_fields=['is_admin', 'wants_admin'])
+
+  def _pre_put_hook(self):
+    if self.key.id() is None:
+      assert self.message.user_id
+      self.key = ndb.Key(UserProfile, self.message.user_id)
+
+  @staticmethod
+  def for_user_id(user_id):
+    '''A get_by_id that always returns a result.'''
+    assert user_id
+    stored = UserProfile.get_by_id(user_id)
+    if stored is not None:
+      return stored
+    else:
+      return UserProfile(
+          id=user_id,
+          message=datamodel.UserProfile(user_id=user_id))
 
 
 class KioskLocation(ndb.Model):
@@ -34,7 +59,7 @@ class ServiceTime(ndb.Model):
 class Service(ndb.Model):
   service_id = ndb.IntegerProperty()
 
-  service_type = EnumProperty(ServiceType)
+  service_type = EnumProperty(datamodel.ServiceType)
   service_detail = ndb.StringProperty()
 
   times = ndb.LocalStructuredProperty(ServiceTime, repeated=True)

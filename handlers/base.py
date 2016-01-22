@@ -5,6 +5,9 @@ import urllib
 import jinja2
 import webapp2
 
+from google.appengine.ext.ndb import Future
+
+import config
 from datamodel import ServiceType
 
 JINJA_ENVIRONMENT = jinja2.Environment(
@@ -44,10 +47,38 @@ PST = FixedOffsetTimeZone(-8, 'PST')
 
 
 class BaseHandler(webapp2.RequestHandler):
+  def __init__(self, request, response):
+    super(BaseHandler, self).__init__(request, response)
+    self.backend = config.BACKEND
+
   def write_template(self, template_name, params={}):
-    params.update(
+    finalparams = dict(
       request=self.request,
       tz=PST,
-      utc=UTC)
+      utc=UTC,
+    )
+    for k,v in params.iteritems():
+      if isinstance(v, Future):
+        finalparams[k] = v.get_result()
+      else:
+        finalparams[k] = v
+      
     self.response.write(
-        JINJA_ENVIRONMENT.get_template(template_name).render(params))
+        JINJA_ENVIRONMENT.get_template(template_name).render(finalparams))
+
+
+def admin_required(orig):
+  def handler_method(self, *args):
+    if self.backend.is_user_admin():
+      orig(self, *args)
+    else:
+      if self.request.method == 'GET':
+        uri = self.request.uri
+      else:
+        uri = '/'
+      self.redirect(self.backend.create_login_url(uri))
+      
+  return handler_method
+
+# currently everybody needs to be an admin
+login_required = admin_required

@@ -3,11 +3,14 @@ import re
 
 from google.appengine.ext import ndb
 
+from base import BaseHandler, login_required
+
 from appengine.models import Location, Service, ServiceTime
-from handlers.base import BaseHandler
+from datamodel import LatLong, ServiceType
 
 
 class EditHandler(BaseHandler):
+  @login_required
   def get(self):
     loc = None
     service = None
@@ -26,6 +29,7 @@ class EditHandler(BaseHandler):
       'redirect_to': self.request.get('r'),
     })
 
+  @login_required
   @ndb.transactional
   def post(self):
     day_names = ['mon','tue','wed','thu','fri','sat','sun']

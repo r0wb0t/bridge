@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
+from urlparse import urlparse, urlunparse
 
-from base import BaseHandler
+from base import BaseHandler, login_required
 
 import config
 from datamodel import OhanaBackend, Query, ServiceType, LatLong
@@ -8,6 +9,7 @@ from datamodel import OhanaBackend, Query, ServiceType, LatLong
 
 def handlers_for_service(criteria, slug):
   class QueryHandler(BaseHandler):
+    @login_required
     def get(self):
       next_criterion = None
       skip_all = False
@@ -56,6 +58,7 @@ def handlers_for_service(criteria, slug):
 
 
   class ResultsHandler(BaseHandler):
+    @login_required
     def get(self):
       options = []
       query = Query()
@@ -64,7 +67,7 @@ def handlers_for_service(criteria, slug):
         options.append(criterion.bind(self.request, '/services/%s' % slug));
         options[-1].add_to_query(query)
 
-      results = config.BACKEND.search(query)
+      results = self.backend.search(query)
 
       for option in options:
         option.postprocess_results(results)
