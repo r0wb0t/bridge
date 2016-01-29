@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block classes %}page makeadminpage{% endblock %}
+{% block body %}
+
+<div class="header">
+<a href="/">Free Print Shop</a>
+</div>
+
+<div class="content">
+
+<h1>Admins</h1>
+
+<ul>
+{% for profile in is_admin %}
+  <li>{{ profile.email }}
+{% endfor %}
+</ul>
+
+<h1>Admin applications</h1>
+
+<ul>
+{% for profile in wants_admin %}
+  <li>{{ profile.email }}
+    <form method=POST>
+      <input type=hidden name=id value="{{ profile.user_id }}">
+      <input type=submit value="Make admin">
+    </form>
+{% endfor %}
+</ul>
+
+</div>
+
+{% endblock %}
+
