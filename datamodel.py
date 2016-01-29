@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from google.appengine.ext import ndb
 from protorpc import messages
 
@@ -101,6 +103,7 @@ class Field:
   LOCATION = 'LOCATION'
   SIXTY_PLUS = 'SIXTY_PLUS'
   ACCESSIBLE = 'ACCESSIBLE'
+  LOCATION_ID = 'LOCATION_ID'
 
 
 class Query:
@@ -111,7 +114,30 @@ class Query:
     self.filters[field] = value
 
   def get(self, field):
-    return self.filters[field]
+    return self.filters.get(field)
+
+
+class Ranker(object):
+  def __init__(self, query):
+    self.query = query
+    self.now = datetime.now() - timedelta(hours=8)
+
+  def rerank(self, results):
+    results = list(results)
+    results.sort(key=self.score)
+    return results
+
+  def score(self, result):
+    return self.dayscore(result)
+
+  def dayscore(self, result):
+    days = set()
+    for service_time in result.service_times:
+      for day in service_time.days:
+        days.add(day)
+    if len(days) == 0:
+      return 10
+    return min((day - self.now.weekday()) % 7 for day in days)
 
 
 # Backends.

@@ -49,6 +49,8 @@
 
     <div>
       {{ result.name }}
+    
+      <a href="/locations/{{ result.id }}">(i) More Information</a>
     </div>
     {% for phone in result.phones %}
       <div>{{ common.phone(phone) }}</div>

@@ -7,7 +7,7 @@ from google.appengine.ext import ndb
 
 from appengine.models import Location, UserProfile
 import datamodel
-from datamodel import Field, LatLong, SearchResult
+from datamodel import Field, LatLong, Ranker, SearchResult
 from backendbase import BackendBase
 
 
@@ -70,12 +70,17 @@ class AppEngineBackend(BackendBase):
     raise ndb.Return(result.message for result in results);
 
   def search(self, query):
-    q = Location.query()
+    if query.get(Field.LOCATION_ID) is not None:
+      location = Location.get_by_id(query.get(Field.LOCATION_ID))
+      assert location
+      locations = [location]
+    else:
+      locations = Location.query()
+      if query.get(Field.ACCESSIBLE) is not None:
+        locations.filter(Location.accessible == query.get(Field.ACCESSIBLE))
 
-    if query.get(Field.ACCESSIBLE) is not None:
-      q.filter(Location.accessible == query.get(Field.ACCESSIBLE))
-
-    results = itertools.chain(*(self.make_results(loc, query) for loc in q))
+    results = itertools.chain(*(
+        self.make_results(loc, query) for loc in locations))
     return Ranker(query).rerank(results)  
 
   def make_results(self, loc, query):
@@ -113,24 +118,3 @@ class AppEngineBackend(BackendBase):
     return True
 
 
-class Ranker(object):
-  def __init__(self, query):
-    self.query = query
-    self.now = datetime.now() - timedelta(hours=8)
-
-  def rerank(self, results):
-    results = list(results)
-    results.sort(key=self.score)
-    return results
-
-  def score(self, result):
-    return self.dayscore(result)
-
-  def dayscore(self, result):
-    days = set()
-    for service_time in result.service_times:
-      for day in service_time.days:
-        days.add(day)
-    if len(days) == 0:
-      return 10
-    return min((day - self.now.weekday()) % 7 for day in days)
