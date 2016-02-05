@@ -85,6 +85,20 @@ body.page .content {
   border: 1px solid #333;
 }
 
+.section-header {
+  border-top: 1px solid #ccc;
+  margin-top: 5ex;
+  margin-bottom: 1ex;
+}
+
+.section-header span {
+  display: inline-block;
+  background-color: #000;
+  color: #fff;
+  font-weight: bold;
+  padding: 5px;
+}
+
 .results {
   list-style-type: none;
   padding: 0;
@@ -101,26 +115,59 @@ body.page .content {
   display: inline-block;
 }
 
-.results .contact {
-  padding: 5px;
-  background-color: #eee;
+.results .heading {
+  margin-bottom: 2ex;
+}
+
+.results .more-info {
+  float: right;
+  font-weight: bold;
+}
+
+.results .more-info img {
+  vertical-align: middle;
+}
+
+.results .more-info a {
+  color: #4285f4
 }
 
 .results .meals {
+  clear: right;
 }
 
 .results .timetable {
-  border-spacing: 0;
-  border-collapse: collapse;
 }
 
-.results .timetable td, .timetable th {
-  border: 1px solid #ccc;
+.results .timetable td {
+  border-right: 0.5em solid #fff;
   width: 9em;
   text-align: center;
+  vertical-align: top;
+  padding-top: 2ex;
+  padding-bottom: 2ex;
 }
 
-.results .timetable th {
+.results .timetable .day-name {
+  margin-bottom: 2ex;
+  font-variant: small-caps;
+}
+
+.results .timetable .closed {
+  color: #999;
+}
+
+.results .timetable td.odd {
+  background-color: #eee; 
+}
+
+.results .timetable td.today {
+  background-color: #999;
+  color: #fff;
+}
+
+.results .timetable td.today .closed {
+  color: #eee;
 }
 
 .results .today {
@@ -141,10 +188,10 @@ body.page .content {
 }
 
 .map {
-  float: right;
+  float: left;
   width: 256px;
   height: 256px;
-  background-color: #eee;
+  margin-right: 2em;
 }
 
 body.edit table {

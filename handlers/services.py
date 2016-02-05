@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
 from urlparse import urlparse, urlunparse
+import itertools
 
 from base import BaseHandler, login_required
 
 import config
-from datamodel import OhanaBackend, Query, ServiceType, LatLong
+from datamodel import OhanaBackend, Query, SearchContext, ServiceType, LatLong
 
 
 def handlers_for_service(criteria, slug):
@@ -61,22 +62,25 @@ def handlers_for_service(criteria, slug):
     @login_required
     def get(self):
       options = []
+      context = SearchContext(datetime.now() - timedelta(hours=8))
       query = Query()
 
       for criterion in criteria:
         options.append(criterion.bind(self.request, '/services/%s' % slug));
         options[-1].add_to_query(query)
 
-      results = self.backend.search(query)
-
-      for option in options:
-        option.postprocess_results(results)
+      results = list(itertools.groupby(
+          self.backend.search(query, context),
+          lambda result: result.section()))
+      
+      #for option in options:
+      #  option.postprocess_results(results)
 
       self.write_template('list.html', {
         'origin': config.LOCATION_CRITERION.get_geo(self.request),
         'options': options,
         'results': results,
-        'now': datetime.now() - timedelta(hours=8),
+        'search_context': context,
       })
 
 

@@ -23,6 +23,15 @@
 
 
 {{ results[0].name }}
+    
+{% if result.website %} - <span class="website">{{ result.website }}</span>{% endif %}
+
+{% for phone in result.phones %}
+  <div>{{ common.phone(phone) }}</div>
+{% endfor %}
+{% if result.address %}
+  <div><span class="address">{{ result.address }}</span></div>
+{% endif %}
 
 </div>
 {% endblock %}

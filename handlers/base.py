@@ -8,7 +8,7 @@ import webapp2
 from google.appengine.ext.ndb import Future
 
 import config
-from datamodel import ServiceType
+from datamodel import ServiceType, SearchSection
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(
@@ -18,6 +18,7 @@ JINJA_ENVIRONMENT = jinja2.Environment(
 JINJA_ENVIRONMENT.install_null_translations()
 
 JINJA_ENVIRONMENT.globals['date'] = date
+JINJA_ENVIRONMENT.globals['SearchSection'] = SearchSection
 ServiceType.export_to(JINJA_ENVIRONMENT)
 
 def urlencode_filter(s):

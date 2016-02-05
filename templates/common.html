@@ -2,7 +2,7 @@
   {{ dttime.strftime('%I').lstrip('0') }}{% if dttime.minute > 0 -%}
   :{{ dttime.strftime('%M') }}
   {%- endif %}{% if show_am_pm -%}
-  {{ dttime.strftime('%p') }}
+  {{ dttime.strftime('%p').lower() }}
   {%- endif %}
 {%- endmacro %}
 
@@ -17,5 +17,5 @@
 {%- endmacro %}
 
 {% macro timestamp(dt) -%}
-  {{ dt.replace(tzinfo=utc).astimezone(tz).strftime("%c") }} {{ tz.tzname(dt) }}
+  {{ dt.replace(tzinfo=utc).astimezone(tz).strftime("%a, %d %b %Y") }}
 {%- endmacro %}

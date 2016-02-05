@@ -69,7 +69,7 @@ class AppEngineBackend(BackendBase):
     results = yield self.typedict[datatype].query(*queryargs).fetch_async()
     raise ndb.Return(result.message for result in results);
 
-  def search(self, query):
+  def search(self, query, context):
     if query.get(Field.LOCATION_ID) is not None:
       location = Location.get_by_id(query.get(Field.LOCATION_ID))
       assert location
@@ -80,14 +80,15 @@ class AppEngineBackend(BackendBase):
         locations.filter(Location.accessible == query.get(Field.ACCESSIBLE))
 
     results = itertools.chain(*(
-        self.make_results(loc, query) for loc in locations))
+        self.make_results(loc, query, context) for loc in locations))
     return Ranker(query).rerank(results)  
 
-  def make_results(self, loc, query):
+  def make_results(self, loc, query, context):
     results = []
     for service in loc.services:
       if self.matches_service(query, service):
         result = SearchResult(
+            context,
             name=loc.name,
             address=loc.address,
             location=LatLong.from_geo(loc.geo),

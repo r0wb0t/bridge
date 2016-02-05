@@ -5,13 +5,13 @@ from protorpc import messages
 
 import re
 
-def memodict(f):
-  class memodict(dict):
-    def __missing__(self, key):
-      ret = self[key] = f(key)
-      return ret 
-  return memodict().__getitem__
-
+def memoize(f):
+  m = {}
+  def get(*args):
+    if args not in m:
+      m[args] = f(*args)
+    return m[args]
+  return get
 
 class EnumType(type):
   def __init__(cls, name, bases, dct):
@@ -89,14 +89,40 @@ class LatLong:
       return LatLong(*coords)
 
 
-class SearchResult:
-  def __init__(self, name, address, location=None, phones=[], website=None):
+class SearchContext(object):
+  def __init__(self, now):
+    self.now = now
+
+
+class SearchSection(messages.Enum):
+  TODAY = 0
+  TOMORROW = 1
+  LATER = 2  
+
+
+class SearchResult(object):
+  def __init__(self, context, name, address, location=None, phones=[], website=None):
+    self.context = context
     self.id = None
     self.name = name
     self.address = address
     self.location = location
     self.phones = phones
     self.website = website
+
+  @memoize
+  def days(self):
+    days = set()
+    for service_time in self.service_times:
+      for day in service_time.days:
+        days.add(day)
+    return days
+
+  @memoize
+  def section(self):
+    if self.context.now.weekday() in self.days():
+      return SearchSection.TODAY
+    return SearchSection.LATER
 
 
 class Field:
@@ -131,13 +157,9 @@ class Ranker(object):
     return self.dayscore(result)
 
   def dayscore(self, result):
-    days = set()
-    for service_time in result.service_times:
-      for day in service_time.days:
-        days.add(day)
-    if len(days) == 0:
+    if len(result.days()) == 0:
       return 10
-    return min((day - self.now.weekday()) % 7 for day in days)
+    return min((day - self.now.weekday()) % 7 for day in result.days())
 
 
 # Backends.
