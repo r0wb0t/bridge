@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from collections import namedtuple
 from urlparse import urlparse, urlunparse
 import itertools
 
@@ -69,9 +70,14 @@ def handlers_for_service(criteria, slug):
         options.append(criterion.bind(self.request, '/services/%s' % slug));
         options[-1].add_to_query(query)
 
-      results = list(itertools.groupby(
+      results = itertools.groupby(
           self.backend.search(query, context),
-          lambda result: result.section()))
+          lambda result: result.section())
+
+      Section = namedtuple('Section', ['section', 'results'])
+      groups = []
+      for result in results:
+        groups.append(Section(result[0], list(result[1])))
       
       #for option in options:
       #  option.postprocess_results(results)
@@ -79,7 +85,7 @@ def handlers_for_service(criteria, slug):
       self.write_template('list.html', {
         'origin': config.LOCATION_CRITERION.get_geo(self.request),
         'options': options,
-        'results': results,
+        'results': groups,
         'search_context': context,
       })
 

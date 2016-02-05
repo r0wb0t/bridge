@@ -27,7 +27,7 @@
 {% endfor %}
 </ul>
 
-{% if not results or results[0][0] != SearchSection.TODAY %}
+{% if not results or results[0].section != SearchSection.TODAY %}
   <div class="section-header"><span>TODAY</span></div>
   {% if results %}
     No results for today match your query. See below for other options.
@@ -42,65 +42,66 @@
   {% else %}
     <div class="section-header"><span>LATER</span></div>
   {% endif %}
-  {% for result in section_results %}
+
   <ul class="results">
-  <li>
-  <div class="map" 
-       data-location="{{ result.location.lat }},{{ result.location.lon }}"
-       {% if origin %}data-origin="{{ origin.lat }},{{ origin.lon }}"{% endif %}></div>
-  <div class="heading">
-    <h2>
-      {% if result.service_type %}
-        {% if result.service_detail %}
-          {{ result.service_detail}}
-        {% else %}
-          {{ _(result.service_type.name) }}
-        {% endif %} 
-        <br>
-      {% endif %}
-    </h2>
+  {% for result in section_results %}
+    <li>
+    <div class="map" 
+         data-location="{{ result.location.lat }},{{ result.location.lon }}"
+         {% if origin %}data-origin="{{ origin.lat }},{{ origin.lon }}"{% endif %}></div>
+    <div class="heading">
+      <h2>
+        {% if result.service_type %}
+          {% if result.service_detail %}
+            {{ result.service_detail}}
+          {% else %}
+            {{ _(result.service_type.name) }}
+          {% endif %} 
+          <br>
+        {% endif %}
+      </h2>
 
-    <div>
-      <div class="more-info">
-        <a href="/locations/{{ result.id }}"><img src="/_/s/info.png" alt="More Information"></a>
-        <a href="/locations/{{ result.id }}">More Information</a>
-      </div>
-
-      {{ result.name }}    
-    </div>
-
-  </div>
-  <div class="meals">
-    <table class="timetable">
-    <tr>
-    {% for day in range(7) %}
-      <td class="{{ loop.cycle('odd', 'even') }}
-          {% if day == search_context.now.weekday() %}today{% endif %}">
-        <div class="day-name">
-          {{ ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][day] }}
+      <div>
+        <div class="more-info">
+          <a href="/locations/{{ result.id }}"><img src="/_/s/info.png" alt="More Information"></a>
+          <a href="/locations/{{ result.id }}">More Information</a>
         </div>
-        {% for service_time in result.service_days[day] %}
-          <div>{{ common.timerange(service_time.start, service_time.end) }}</div>
-        {% else %}
-          <div class="closed">Closed</div>
-        {% endfor %}
-      </td>
-    {% endfor %}
-    </tr>
-    </table>
-    {% for service_time in result.service_times %}
-      <div class="meal">
-      {% for day in service_time.days %}
-        <b>
-        </b>
-      {% endfor %}
+
+        {{ result.name }}    
       </div>
-    {% endfor %}
-  </div>
-  <div class="props">
-    <ul>
-      {% if result.accessible %}<li>ADA Accessible{% endif %}
-      {% if result.requires_ticket %}<li>Requires Ticket{% endif %}
+
+    </div>
+    <div class="meals">
+      <table class="timetable">
+      <tr>
+      {% for day in range(7) %}
+        <td class="{{ loop.cycle('odd', 'even') }}
+            {% if day == search_context.now.weekday() %}today{% endif %}">
+          <div class="day-name">
+            {{ ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][day] }}
+          </div>
+          {% for service_time in result.service_days[day] %}
+            <div>{{ common.timerange(service_time.start, service_time.end) }}</div>
+          {% else %}
+            <div class="closed">Closed</div>
+          {% endfor %}
+        </td>
+      {% endfor %}
+      </tr>
+      </table>
+      {% for service_time in result.service_times %}
+        <div class="meal">
+        {% for day in service_time.days %}
+          <b>
+          </b>
+        {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="props">
+      <ul>
+        {% if result.accessible %}<li>ADA Accessible{% endif %}
+        {% if result.requires_ticket %}<li>Requires Ticket{% endif %}
         {% if result.requires_local_addr %}<li>Requires Local Address{% endif %}
         {% if result.requires_church_attend %}<li>Requires Church Attendence{% endif %}
       </ul>
@@ -116,7 +117,7 @@
     {% endif %}
 
     <br clear=both>
-    {% endfor %}
+  {% endfor %}
   </ul>
 {% endfor %}
 
