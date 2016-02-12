@@ -5,7 +5,7 @@ from collections import defaultdict
 from google.appengine.api import users
 from google.appengine.ext import ndb
 
-from appengine.models import Location, UserProfile
+from appengine import models
 import datamodel
 from datamodel import Field, LatLong, Ranker, SearchResult
 from backendbase import BackendBase
@@ -15,7 +15,8 @@ class AppEngineBackend(BackendBase):
   def __init__(self):
     self.admins = set()
     self.typedict = {
-      datamodel.UserProfile: UserProfile,
+      datamodel.UserProfile: models.UserProfile,
+      datamodel.AdminInvite: models.AdminInvite,
     }
 
   def is_user_admin(self):
@@ -29,7 +30,7 @@ class AppEngineBackend(BackendBase):
     if current_user.user_id() in self.admins:
       return True
 
-    profile = UserProfile.for_user_id(current_user.user_id())
+    profile = models.UserProfile.for_user_id(current_user.user_id())
     if profile.message.is_admin:
       self.admins.add(current_user.user_id())
       return True
@@ -47,7 +48,7 @@ class AppEngineBackend(BackendBase):
       assert users.get_current_user() 
       user_id = users.get_current_user().user_id()
       email = users.get_current_user().email()
-    profile = UserProfile.for_user_id(user_id).message
+    profile = models.UserProfile.for_user_id(user_id).message
     if email and not profile.email:
       profile.email = email
     return profile
@@ -58,6 +59,11 @@ class AppEngineBackend(BackendBase):
   def save(self, dataobject):
     self.typedict[type(dataobject)](message=dataobject).put()    
 
+  def delete_async(self, dataobject):
+    model_type = self.typedict[type(dataobject)]
+    id = model_type(message=dataobject).get_id()
+    return ndb.Key(model_type, id).delete_async()    
+
   @ndb.tasklet
   def find(self, datatype, **kwargs):
     queryargs = []
@@ -67,17 +73,19 @@ class AppEngineBackend(BackendBase):
       queryargs.append(prop == v)
 
     results = yield self.typedict[datatype].query(*queryargs).fetch_async()
+    for result in results:
+      result.populate_id()
     raise ndb.Return(result.message for result in results);
 
   def search(self, query, context):
     if query.get(Field.LOCATION_ID) is not None:
-      location = Location.get_by_id(query.get(Field.LOCATION_ID))
+      location = models.Location.get_by_id(query.get(Field.LOCATION_ID))
       assert location
       locations = [location]
     else:
-      locations = Location.query()
+      locations = models.Location.query()
       if query.get(Field.ACCESSIBLE) is not None:
-        locations.filter(Location.accessible == query.get(Field.ACCESSIBLE))
+        locations.filter(models.Location.accessible == query.get(Field.ACCESSIBLE))
 
     results = itertools.chain(*(
         self.make_results(loc, query, context) for loc in locations))

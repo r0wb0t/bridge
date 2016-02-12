@@ -5,6 +5,7 @@ import urllib
 import jinja2
 import webapp2
 
+from google.appengine.api import users
 from google.appengine.ext.ndb import Future
 
 import config
@@ -73,11 +74,16 @@ def admin_required(orig):
     if self.backend.is_user_admin():
       orig(self, *args)
     else:
-      if self.request.method == 'GET':
-        uri = self.request.uri
+      current_user = users.get_current_user()
+      if current_user is None:
+        if self.request.method == 'GET':
+          uri = self.request.uri
+        else:
+          uri = '/'
+        self.redirect(self.backend.create_login_url(uri))
       else:
-        uri = '/'
-      self.redirect(self.backend.create_login_url(uri))
+        self.response.write(
+            'Admin access required. Request it <a href="/apply">here</a>.')
       
   return handler_method
 

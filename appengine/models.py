@@ -4,6 +4,29 @@ from google.appengine.ext.ndb.msgprop import MessageProperty
 import datamodel
 
 
+def message_model(id_field):
+  class Mixin:
+    def _pre_put_hook(self):
+      if self.key.id() is None and getattr(self.message, id_field) is not None:
+        self.key = ndb.Key(UserProfile, getattr(self.message, id_field))
+
+    @classmethod
+    def _post_get_hook(cls, key, future):
+      obj = future.get_result()
+      if obj:
+        obj.populate_id()
+
+    def populate_id(self):
+      if getattr(self.message, id_field) is None:
+        setattr(self.message, id_field, self.key.id())
+
+    def get_id(self):
+      assert getattr(self.message, id_field)
+      return getattr(self.message, id_field)
+      
+  return Mixin
+
+
 class EnumProperty(ndb.IntegerProperty):
   def __init__(self, enum_type, **kwargs):
     super(EnumProperty, self).__init__(choices=enum_type.values(), **kwargs)
@@ -19,7 +42,7 @@ class EnumProperty(ndb.IntegerProperty):
     return self.enum_type.for_number(value)
 
 
-class UserProfile(ndb.Model):
+class UserProfile(message_model(id_field='user_id'), ndb.Model):
   message = MessageProperty(
       datamodel.UserProfile,
       indexed_fields=['is_admin', 'wants_admin'])
@@ -40,6 +63,12 @@ class UserProfile(ndb.Model):
       return UserProfile(
           id=user_id,
           message=datamodel.UserProfile(user_id=user_id))
+
+
+class AdminInvite(message_model(id_field='id'), ndb.Model):
+  message = MessageProperty(
+      datamodel.AdminInvite,
+      indexed_fields=['code'])
 
 
 class KioskLocation(ndb.Model):

@@ -14,9 +14,9 @@ class LogoutHandler(webapp2.RequestHandler):
 
 app = webapp2.WSGIApplication(
   [('/', IndexHandler),
+   ('/admin', MakeAdminHandler),
    ('/apply', ApplyHandler),
    ('/logout', LogoutHandler),
-   ('/makeadmin', MakeAdminHandler),
    ('/edit', EditHandler),
    ('/locations/(.*)', LocationHandler)] +
       handlers_for_service(config.FOOD_CRITERIA, 'food'),

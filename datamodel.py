@@ -66,6 +66,11 @@ class UserProfile(messages.Message):
   email = messages.StringField(4, required=False)
 
 
+class AdminInvite(messages.Message):
+  id = messages.IntegerField(2)
+  code = messages.StringField(1, required=True)
+
+
 class LatLong:
   def __init__(self, lat, lon):
     self.lat = lat
