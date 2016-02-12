@@ -9,7 +9,7 @@ class MakeAdminHandler(BaseHandler):
   """Handler for applying to be an admin."""
 
   def get(self):
-    if self.request.get('code'):
+    if self.request.get('code') and not self.backend.is_user_admin():
       invites = list(
           self.backend.find(AdminInvite, code=self.request.get('code'))
               .get_result())
