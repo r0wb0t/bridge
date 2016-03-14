@@ -216,16 +216,30 @@ body.edit td {
   vertical-align: top;
 }
 
-.service-tab {
-  display: inline-block;
+body.edit button {
+  font-size: inherit;
+  border-style: none;
+  background-color: transparent;
+  color: blue;
+  cursor: pointer;
+}
+
+body.edit button.service-tab {
+  font-size: inherit;
   padding: 5px;
   border: 1px solid #333;
   background-color: #eee;
+  color: blue;
+  cursor: pointer;
 }
 
-.service-tab.self {
+body.edit span.service-tab {
+  display: inline-block;
+  padding: 5px;
+  border: 1px solid #333;
   border-bottom-style: none;
-  background-color: transparent;
-  color: #000;
-  text-decoration: none;
+}
+
+body.edit button.rem {
+  color: red;
 }

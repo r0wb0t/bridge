@@ -78,11 +78,9 @@ class KioskLocation(ndb.Model):
 
 
 class ServiceTime(ndb.Model):
-  start = ndb.TimeProperty()
+  day = ndb.IntegerProperty(required=True)
+  start = ndb.TimeProperty(required=True)
   end = ndb.TimeProperty()
-  days = ndb.IntegerProperty(repeated=True)
-  only_dates = ndb.DateProperty(repeated=True)
-  not_dates = ndb.DateProperty(repeated=True)
 
 
 class Service(ndb.Model):
