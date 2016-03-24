@@ -45,9 +45,9 @@ input.save {
   cursor: pointer;
 }
 
-.rem {
-  float: right;
-  font-size: smaller;
+.removed {
+  text-decoration: line-through !important;
+  color: red !important;
 }
 
 </style>
@@ -58,6 +58,10 @@ input.save {
 
 {% macro checkedif(cond) -%}
 {% if cond %}checked{%endif%}
+{%- endmacro %}
+
+{% macro disabledif(cond) -%}
+{% if cond %}tabindex="-1"{%endif%}
 {%- endmacro %}
 
 <div class="content">
@@ -76,15 +80,27 @@ input.save {
 {% endfor %}
 </table>
 
-<form method=post id=editform>
-<input type=hidden name=id value="{{ loc.key.id() if loc }}">
-<input type=hidden name=service_index value="{{ service_index }}">
-<input type=hidden name=r value="{{ redirect_to }}">
+<form action="#" method=post id=editform>
+{% if loc and loc.key %}
+  <input type=hidden name=id value="{{ loc.key.id() }}">
+{% endif %}
+{% if service_index is not none %}
+  <input type=hidden name=service_index value="{{ service_index }}">
+{% endif %}
+{% if redirect_to is not none %}
+  <input type=hidden name=r value="{{ redirect_to }}">
+{% endif %}
 <input type=hidden name=num_services value="{{ loc.services|length }}">
+<input type=hidden name=removed_services value="{{ removed_services|default([])|join(' ') }}">
 
-<input type=button class="save" name="save" value="Save" style="position:fixed;right:10px;" onclick="form.submit()">
+<input type=submit
+       class="save"
+       name="save"
+       value="Save"
+       style="position:fixed;z-index:100;right:10px;">
 
 <table>
+<colgroup width="0*"></colgroup><colgroup width="99%"></colgroup>
 <tbody>
   <tr><td>Name</td><td><input name=name id=name value="{{ loc.name }}"></td></tr>
   <tr><td>Address</td><td><input name=address id=address size="64" value="{{ loc.address }}"></td></tr>
@@ -112,12 +128,17 @@ input.save {
   <tr><th colspan=2>
     <a name=services></a>
     {% for other_service in loc.services %}
+      {% set removed = removed_services and (loop.index0 in removed_services) %}
       {% if service_index == loop.index0 %}
-        <span class="service-tab">{{ other_service.service_detail|default('<Service>', true) }}</span>
+        <span class="service-tab {% if removed %}removed{% endif %}">
+          {{ other_service.service_detail|default('<Service>', true) }}
+        </span>
       {% else %}
-      <button name="switch_service" value="{{ loop.index0 }}" class="service-tab">
-        {{ other_service.service_detail|default('<Service>', true) }}
-      </button>
+        <button name="switch_service"
+                value="{{ loop.index0 }}"
+                class="service-tab {% if removed %}removed{% endif %}">
+          {{ other_service.service_detail|default('<Service>', true) }}
+        </button>
       {% endif %}
     {% endfor %}
     <button name="add_service" class="service-tab">+ Add New Service</button>
@@ -128,14 +149,21 @@ input.save {
 {% for service in loc.services %}
   {% set sprefix = 's_' ~ loop.index0 %}
   {% set show_service = service_index == loop.index0 %}
+  {% set removed = removed_services and (loop.index0 in removed_services) %}
   <input type=hidden name={{ sprefix }}_service_id value="{{ service.service_id if service.service_id is not none }}">
   <input type=hidden name={{ sprefix }}_num_times value="{{ service.times|length }}">
   <input type=hidden name={{ sprefix }}_num_not_dates value="{{ service.not_dates|length }}">
 
-  <tbody {% if not show_service %}style="display:none"{% endif %}>
+  {% if show_service and removed %}
+    <tbody><tr><td colspan=2>
+      <button name="restore_service">+ Restore Service</button>
+    </td></tr></tbody>
+  {% endif %}
+  <tbody {% if not show_service %}style="display:none"{% endif %}
+         class="{% if removed %}disabled{% endif %}">
     {% set id = sprefix ~ '_service_type' %}
     <tr><td><label for={{ id }}>Service Type</label></td><td>
-    <select name={{ id }} id={{ id }}>
+    <select name={{ id }} id={{ id }} {{ disabledif(removed) }}>
       {% for service_type in ServiceType.names() %}
         <option value="{{ service_type }}"
                 {% if service and
@@ -147,9 +175,14 @@ input.save {
     </td></tr>
     {% set id = sprefix ~ '_service_detail' %}
     <tr><td><label for={{ id }}>Service Detail</label></td>
-        <td><input name={{ id }} id={{ id }} value="{{ service.service_detail|default('', true) }}"></td></tr>
+        <td><input name={{ id }} id={{ id }}
+                   value="{{ service.service_detail|default('', true) }}"
+                   {{ disabledif(removed) }}>
+        </td>
+    </tr>
   </tbody>
-  <tbody {% if not show_service %}style="display:none"{% endif %}>
+  <tbody {% if not show_service %}style="display:none"{% endif %}
+         class="{% if removed %}disabled{% endif %}">
     <tr><td>Service Times</td><td>
     {% macro time_option(value, select=none) -%}
       {% set display = "%02d"|format(value) %}
@@ -160,7 +193,7 @@ input.save {
     {%- endmacro %}
 
     {% macro hour_select(name, time) -%}
-      <select name={{ name }}>
+      <select name={{ name }} {{ disabledif(removed) }}>
       <option value="">
       {% for hour in range(24) %}
         {{ time_option(hour, (time.hour if time)) }}
@@ -169,8 +202,8 @@ input.save {
     {%- endmacro %}
 
     {% macro minute_select(name, time) -%}
-      <select name={{ name }}>
-      {% for minute in range(60) %}
+      <select name={{ name }} {{ disabledif(removed) }}>
+      {% for minute in range(0, 60, 5) %}
         {{ time_option(minute, (time.minute if time)) }}
       {% endfor %}
       </select>
@@ -185,7 +218,7 @@ input.save {
     {%- endmacro %}
     
     {% macro date_fields(prefix, d) -%}
-      <select name={{ prefix }}_month>
+      <select name={{ prefix }}_month {{ disabledif(removed) }}>
       {% for month in range(1, 13) %}
         <option value="{{ month }}"
                 {% if d and d.month == month %}selected{% endif %}>
@@ -196,19 +229,32 @@ input.save {
     {%- endmacro %}
 
     <table>
+      <colgroup width="0*"></colgroup><colgroup width="99%"></colgroup>
       <tbody>
       {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
         {% set day_index = loop.index0 %}
         <tr><td>{{ day }}</td>
             <td>
-            {% for time in service.times %}
-              {% if time.day == day_index %}
-                {% if not loop.first %}<br>{% endif %}
-                {{ time_fields(sprefix, loop.index0, time) }}
-                <button name="remove_time" value="{{ loop.index0 }}" formaction="#services" class="rem">remove</button>
-              {% endif %}
-            {% endfor %}
-            <button name="add_time" value="{{ day.lower() }}" formaction="#services">add</button>
+              {% for time in service.times %}
+                {% if time.day == day_index %}
+                  <input type=hidden name={{ sprefix ~ '_day_' ~ loop.index0 }} value="{{ day.lower() }}">
+                  {% if not loop.first %}<br>{% endif %}
+                  {{ time_fields(sprefix, loop.index0, time) }}
+                  <button name="remove_time"
+                          value="{{ loop.index0 }}"
+                          formaction="#services"
+                          class="rem"
+                          {{ disabledif(removed) }}>
+                    remove
+                  </button>
+                {% endif %}
+              {% endfor %}
+              <button name="add_time"
+                      value="{{ day.lower() }}"
+                      formaction="#services"
+                      {{ disabledif(removed) }}>
+                add
+              </button>
             </td>
         </tr>
       {% endfor %}
@@ -219,7 +265,13 @@ input.save {
               <td>
                 {% for d in service.not_dates %}
                     {{ date_fields(sprefix ~ '_not_date_' ~ loop.index0, d) }}
-                    <button name="remove_not_date" value="{{ loop.index0 }}" formaction="#services" class="rem">remove</button>
+                    <button name="remove_not_date"
+                            value="{{ loop.index0 }}"
+                            formaction="#services"
+                            class="rem"
+                            {{ disabledif(removed) }}>
+                      remove
+                    </button>
                   </td></tr>
                 {% endfor %}
               </td>
@@ -227,32 +279,50 @@ input.save {
         </tbody>
       {% endif %}
       <tbody><tr><td colspan=2>
-        <button name="add_not_date" formaction="#services">+ Add Exception</button>
+        <button name="add_not_date"
+                formaction="#services"
+                {{ disabledif(removed) }}>
+          + Add Exception
+        </button>
       </td></tr></tbody>
     </table>
 
     </td></tr>
   </tbody>
-  <tbody {% if not show_service %}style="display:none"{% endif %}>
+  <tbody {% if not show_service %}style="display:none"{% endif %}
+         class="{% if removed %}disabled{% endif %}">
     {% set id = sprefix ~ '_requires_ticket' %}
     <tr><td><label for={{ id }}>Requires Ticket</label></td>
-        <td><input type=checkbox name={{ id }} id={{ id }} {{ checkedif(service.requires_ticket) }}></td>
+        <td><input type=checkbox
+                   name={{ id }} id={{ id }}
+                   {{ checkedif(service.requires_ticket) }}
+                   {{ disabledif(removed) }}>
+        </td>
     </tr>
     {% set id = sprefix ~ '_requires_local_addr' %}
     <tr><td><label for={{ id }}>Requires Local Address</label></td>
-        <td><input type=checkbox name={{ id }} id={{ id }} {{ checkedif(service.requires_local_addr) }}></td>
+        <td><input type=checkbox
+                   name={{ id }} id={{ id }}
+                   {{ checkedif(service.requires_local_addr) }}
+                   {{ disabledif(removed) }}>
+        </td>
     </tr>
     {% set id = sprefix ~ '_requires_church_attend' %}
     <tr><td><label for={{ id }}>Requires Church Attendence</label></td>
-        <td><input type=checkbox name={{ id }} id={{ id }} {{ checkedif(service.requires_church_attend) }}></td>
+        <td><input type=checkbox
+                   name={{ id }} id={{ id }}
+                   {{ checkedif(service.requires_church_attend) }}
+                   {{ disabledif(removed) }}></td>
     </tr>
     {% set id = sprefix ~ '_extra_notes' %}
     <tr><td><label for={{ id }}>Extra Notes</label></td>
-        <td><textarea rows=10 cols=40 name={{ id }} id={{ id }}>{{ service.extra_notes|default('', true) }}</textarea>
+        <td><textarea rows=10 cols=40
+                      name={{ id }} id={{ id }}
+                      {{ disabledif(removed) }}>{{ service.extra_notes|default('', true) }}</textarea>
         </td>
     </tr>
   </tbody>
-  {% if show_service %}
+  {% if show_service and not removed %}
     <tbody><tr><td colspan=2>
       <button name="remove_service" class="rem">- Remove Service</button>
     </td></tr></tbody>
@@ -270,16 +340,25 @@ function initMap() {
       new google.maps.LatLng(37.814666, -122.357483));
 
   var geocoder = new google.maps.Geocoder();
+  var input = document.getElementById('address');
+  // Prevent autocomplete from submitting the form.
+  google.maps.event.addDomListener(input, 'keydown', function(e) { 
+    if (e.keyCode == 13) { 
+        e.preventDefault(); 
+    }
+  });
   var autocomplete = new google.maps.places.Autocomplete(
-      document.getElementById('address'),
+      input,
       {
         bounds: sfBounds
       });
   autocomplete.addListener('place_changed', function() {
     var place = autocomplete.getPlace();
-    document.getElementById('location').value =
-        place.geometry.location.lat() + ',' + place.geometry.location.lng();
-    onGeoChange(document.getElementById('location'));
+    if (place.geometry) {
+      document.getElementById('location').value =
+          place.geometry.location.lat() + ',' + place.geometry.location.lng();
+      onGeoChange(document.getElementById('location'));
+    }
     if (place.website && document.getElementById('website').value == '') {
       document.getElementById('website').value = place.website; 
     }
@@ -287,11 +366,11 @@ function initMap() {
       document.getElementById('name').value = place.name; 
     }
     if (place.types[0] == 'street_address') {
-      document.getElementById('address').value = place.formatted_address;
+      input.value = place.formatted_address;
     } else {
       geocoder.geocode({location: place.geometry.location}, function(results) {
         if (results[0]) {
-          document.getElementById('address').value = results[0].formatted_address;
+          input.value = results[0].formatted_address;
         }
       });
     }

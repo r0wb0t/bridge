@@ -110,8 +110,8 @@ class AppEngineBackend(BackendBase):
         result.service_times = service.times
         result.service_days = defaultdict(list)
         for time in result.service_times:
-          for day in time.days:
-            result.service_days[day].append(time)
+          if time.start:
+            result.service_days[time.day].append(time)
         for times in result.service_days.viewvalues():
           times.sort(key=lambda time: time.start)
 

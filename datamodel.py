@@ -117,11 +117,7 @@ class SearchResult(object):
 
   @memoize
   def days(self):
-    days = set()
-    for service_time in self.service_times:
-      for day in service_time.days:
-        days.add(day)
-    return days
+    return set((service_time.day for service_time in self.service_times))
 
   @memoize
   def section(self):

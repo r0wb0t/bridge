@@ -83,6 +83,11 @@ class ServiceTime(ndb.Model):
   end = ndb.TimeProperty()
 
 
+class ServiceNotDate(ndb.Model):
+  month = ndb.IntegerProperty()
+  day = ndb.IntegerProperty()
+
+
 class Service(ndb.Model):
   service_id = ndb.IntegerProperty()
 
@@ -90,7 +95,7 @@ class Service(ndb.Model):
   service_detail = ndb.StringProperty()
 
   times = ndb.LocalStructuredProperty(ServiceTime, repeated=True)
-  not_dates = ndb.DateProperty(repeated=True)
+  not_dates = ndb.LocalStructuredProperty(ServiceNotDate, repeated=True)
 
   requires_ticket = ndb.BooleanProperty()
   requires_local_addr = ndb.BooleanProperty()
@@ -120,6 +125,11 @@ class Location(ndb.Model):
     for service in self.services:
       if service.service_id == service_id:
         return service
+
+  def service_index(self, service_id):
+    for i, service in enumerate(self.services):
+      if service.service_id == service_id:
+        return i
 
   def add_service(self):
     service = Service()

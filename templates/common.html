@@ -7,7 +7,11 @@
 {%- endmacro %}
 
 {% macro timerange(start, end) -%}
-  {{ time(start, show_am_pm=(start.strftime('%p') != end.strftime('%p'))) }}-{{ time(end) }}
+  {% if not end %}
+    {{ time(start) }}
+  {% else %}
+    {{ time(start, show_am_pm=(start.strftime('%p') != end.strftime('%p'))) }}-{{ time(end) }}
+  {% endif %}
 {%- endmacro %}
 
 {% macro phone(number) -%}

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 import re
 
 from google.appengine.ext import ndb
@@ -6,37 +6,40 @@ from webob.multidict import MultiDict
 
 from base import BaseHandler, login_required
 
-from appengine.models import Location, Service, ServiceTime
+from appengine.models import Location, Service, ServiceTime, ServiceNotDate
 from datamodel import LatLong, ServiceType
+
+
+DAY_NAMES = ['mon','tue','wed','thu','fri','sat','sun']
 
 
 class EditHandler(BaseHandler):
   @login_required
   def get(self):
     loc = None
-    service = None
+    service_index = None
     if self.request.get('id'):
       loc = Location.get_by_id(int(self.request.get('id')))
 
       if self.request.get('service_id'):
-        service = loc.service(int(self.request.get('service_id')))
+        service_index = loc.service_index(int(self.request.get('service_id')))
 
     all_locs = Location.query().order(Location.name)
 
     self.write_template('form.html', {
       'all_locs': all_locs,
       'loc': loc,
-      'service_id': self.request.get('service_id'),
+      'service_index': service_index,
       'redirect_to': self.request.get('r'),
     })
 
   @login_required
   def post(self):
-    if self.request.get('save'):
+    if 'save' in self.request.params:
       if self.request.get('id'):
-        loc, service = update(int(self.request.get('id')))
+        loc, service = self.update(int(self.request.get('id')))
       else:
-        loc, service = create()
+        loc, service = self.create()
 
       redirect_url = self.request.get('r')
       if not redirect_url:
@@ -56,20 +59,47 @@ class EditHandler(BaseHandler):
         loc = Location()
       service = self.populate(loc)
 
-      if 'add_service' in self.request.params:
-        service = Service()
-        loc.services.append(service)
-
       service_index = None
       if service:
         for i, s in enumerate(loc.services):
           if s is service:
             service_index = i
 
+      removed_services = [int(s)
+          for s in self.request.get('removed_services').split()]
+
+      if 'add_service' in self.request.params:
+        service = Service()
+        loc.services.append(service)
+        service_index = len(loc.services) - 1
+      if 'remove_service' in self.request.params:
+        assert service
+        removed_services.append(service_index)
+      if 'restore_service' in self.request.params:
+        assert service
+        removed_services.remove(service_index)
+      elif 'add_time' in self.request.params:
+        assert service
+        day = DAY_NAMES.index(self.request.get('add_time'))
+        assert 0 <= day < 7, day
+        service.times.append(ServiceTime(day=day))
+      elif 'remove_time' in self.request.params:
+        assert service
+        index = int(self.request.get('remove_time'))
+        del service.times[index]
+      elif 'add_not_date' in self.request.params:
+        assert service
+        service.not_dates.append(ServiceNotDate())
+      elif 'remove_not_date' in self.request.params:
+        assert service
+        index = int(self.request.get('remove_not_date'))
+        del service.not_dates[index]
+
       self.write_template('form.html', {
         'all_locs': all_locs,
         'loc': loc,
         'service_index': service_index,
+        'removed_services': removed_services,
         'redirect_to': self.request.get('r'),
       })
 
@@ -87,7 +117,6 @@ class EditHandler(BaseHandler):
     return loc, service
 
   def populate(self, loc, for_put=False):
-    day_names = ['mon','tue','wed','thu','fri','sat','sun']
 
     loc.populate(
         name=self.request.get('name'),
@@ -140,22 +169,23 @@ class EditHandler(BaseHandler):
       num_times = min(100, int(service_subset.get('num_times')))
       for i in range(num_times):
         arg = lambda name: service_subset.get('%s_%s' % (name, i))
-        if days:
+        if arg('day'):
           parse_time = lambda h, m: datetime.strptime(h+m, '%H%M').time()
           service.times.append(ServiceTime(
-              day=day_names.index(time_arg('day')),
-              start=parse_time(time_arg('start_hr'), time_arg('start_min')),
-              end=parse_time(time_arg('end_hr'), time_arg('end_min'))))
+              day=DAY_NAMES.index(arg('day')),
+              start=parse_time(arg('start_hr'), arg('start_min')),
+              end=parse_time(arg('end_hr'), arg('end_min'))))
 
       service.not_dates = []
       num_not_dates = min(100, int(service_subset.get('num_not_dates')))
       for i in range(num_not_dates):
-        arg = lambda name: service_subset.get('not_date_%s_%s' % (i, name))
-        if arg('month'):
-          service.not_dates.append(date(
-              2000,
-              int(arg('month')),
-              int(arg('day'))));
+        subset = param_subset(service_subset, 'not_date_%s_' % i)
+        not_date = ServiceNotDate()
+        service.not_dates.append(not_date)
+        if subset.get('month'):
+          not_date.month = int(subset.get('month'))
+        if subset.get('day'):
+          not_date.day = int(subset.get('day'))
 
     return selected_service
    

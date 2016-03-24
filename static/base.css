@@ -198,12 +198,12 @@ body.edit table {
   border-spacing: 0 10px;
 }
 
-body.edit tr:first-child > td {
+body.edit tr:first-of-type > td {
   border-top: 1px dotted #ccc;
   padding-top: 10px;
 }
 
-body.edit tbody:first-child tr:first-child > td {
+body.edit tbody:first-of-type tr:first-of-type > td {
   border-style: none;
   padding-top: 0;
 }
@@ -216,12 +216,26 @@ body.edit td {
   vertical-align: top;
 }
 
+body.edit .disabled td {
+  color: gray;
+}
+
+body.edit td:first-of-type {
+  white-space: nowrap;
+  padding-right: 10px;
+}
+
 body.edit button {
   font-size: inherit;
   border-style: none;
   background-color: transparent;
   color: blue;
   cursor: pointer;
+}
+
+body.edit .disabled button {
+  color: gray;
+  cursor: default;
 }
 
 body.edit button.service-tab {
@@ -242,4 +256,25 @@ body.edit span.service-tab {
 
 body.edit button.rem {
   color: red;
+}
+
+body.edit .disabled button.rem {
+  color: gray;
+}
+
+body.edit .disabled > tr > td {
+    position: relative;
+}
+
+body.edit .disabled > tr > td:after {
+    position: absolute;
+    background-color: white;
+    opacity: 0.5;
+    width: 100%;
+    height: 100%;
+    display: block;
+    content: " ";
+    top: 0;
+    left: 0;
+    z-index: 1;
 }
