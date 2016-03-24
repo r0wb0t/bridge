@@ -117,7 +117,9 @@ class SearchResult(object):
 
   @memoize
   def days(self):
-    return set((service_time.day for service_time in self.service_times))
+    return set((service_time.day
+        for service_time in self.service_times
+        if service_time.day is not None))
 
   @memoize
   def section(self):
