@@ -98,10 +98,10 @@
         {% if result.requires_local_addr %}<li>Requires Local Address{% endif %}
         {% if result.requires_church_attend %}<li>Requires Church Attendence{% endif %}
       </ul>
+      {% if result.service_notes %}
+        <div>{{ result.service_notes }}</div>
+      {% endif %}
     </div>
-    {% if result.service_notes %}
-      <div>{{ result.service_notes }}</div>
-    {% endif %}
     {% if result.id %}
       <div class="metadata">
       Last updated: {{ common.timestamp(result.last_modified) }}
