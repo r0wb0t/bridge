@@ -74,7 +74,8 @@
     <div class="meals">
       <table class="timetable">
       <tr>
-      {% for day in range(7) %}
+      {% for offset in range(7) %}
+        {% set day = (search_context.now.weekday() + offset) % 7 %}
         <td class="{{ loop.cycle('odd', 'even') }}
             {% if day == search_context.now.weekday() %}today{% endif %}">
           <div class="day-name">

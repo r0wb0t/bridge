@@ -177,6 +177,10 @@ body.page .content {
   border-bottom-color: #dfa554;
 }
 
+.results .props {
+  margin-top: 2ex;
+}
+
 .results .metadata {
   clear: both;
   text-align:right;
