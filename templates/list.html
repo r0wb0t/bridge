@@ -67,7 +67,39 @@
           <a href="/locations/{{ result.id }}">More Information</a>
         </div>
 
-        {{ result.name }}    
+        {{ result.name }}
+        {% if result.phone and result.phone.number %}
+          •
+          {{ result.phone.number }}
+          {% set has_days = (result.phone.days|length) not in [0,7] %}
+          {% set has_hours = result.phone.start and result.phone.end %}
+          {% if has_days or has_hours -%}
+            ( 
+            {%- if has_days -%}
+              {%- for day in result.phone.days -%}
+                {%- if not loop.first
+                      and result.phone.days[loop.index0 - 1] == day - 1
+                      and (loop.last
+                          or result.phone.days[loop.index0 + 1] != day + 1) -%}
+                  -
+                {%- elif not loop.first
+                      and result.phone.days[loop.index0 - 1] != day - 1 -%}
+                  ,
+                {%- endif -%}
+                {%- if loop.first
+                      or loop.last
+                      or result.phone.days[loop.index0 - 1] != day - 1 -%}
+                  {{ ['M','Tu','W','Th','F','Sa','Su'][day] }}
+                {%- endif -%}
+              {%- endfor -%}
+            {%- endif -%}
+            {%- if has_days and has_hours %} {% endif -%}
+            {%- if has_hours -%}
+              {{ common.timerange(result.phone.start, result.phone.end) }}
+            {%- endif -%}
+            )
+          {%- endif %}
+        {% endif %}
       </div>
 
     </div>

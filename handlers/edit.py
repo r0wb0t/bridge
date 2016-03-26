@@ -6,7 +6,8 @@ from webob.multidict import MultiDict
 
 from base import BaseHandler, login_required
 
-from appengine.models import Location, Service, ServiceTime, ServiceNotDate
+from appengine import models
+from appengine.models import Location, Service
 from datamodel import LatLong, ServiceType
 
 
@@ -82,18 +83,22 @@ class EditHandler(BaseHandler):
         assert service
         day = DAY_NAMES.index(self.request.get('add_time'))
         assert 0 <= day < 7, day
-        service.times.append(ServiceTime(day=day))
+        service.times.append(models.ServiceTime(day=day))
       elif 'remove_time' in self.request.params:
         assert service
         index = int(self.request.get('remove_time'))
         del service.times[index]
       elif 'add_not_date' in self.request.params:
         assert service
-        service.not_dates.append(ServiceNotDate())
+        service.not_dates.append(models.ServiceNotDate())
       elif 'remove_not_date' in self.request.params:
         assert service
         index = int(self.request.get('remove_not_date'))
         del service.not_dates[index]
+      elif 'add_phone' in self.request.params:
+        loc.phone = models.ServicePhone()
+      elif 'remove_phone' in self.request.params:
+        loc.phone = None
 
       self.write_template('form.html', {
         'all_locs': all_locs,
@@ -122,11 +127,19 @@ class EditHandler(BaseHandler):
         name=self.request.get('name'),
         address=self.request.get('address'),
         geo=LatLong.to_geo(LatLong.from_str(self.request.get('location'))),
-        phones=[int(re.sub(r'[^0-9]+', '', p))
-                for p in self.request.get('phones').splitlines()
-                if len(p.strip()) > 0],
         websites=[self.request.get('website')],
         accessible='accessible' in self.request.arguments())
+
+    if 'phone_number' in self.request.params:
+      subset = param_subset(self.request.params, 'phone_', '_0')
+      start, end = parse_time_range(subset)
+
+      loc.phone = models.ServicePhone(
+          number=self.request.get('phone_number'),
+          days=[d for d in range(7)
+              if 'phone_day_%s' % d in self.request.params],
+          start=start,
+          end=end)
     
     service_index = None
     selected_service = None
@@ -136,6 +149,8 @@ class EditHandler(BaseHandler):
       service_index = int(self.request.get('service_index'))
     
     num_services = min(100, int(self.request.get('num_services')))
+    removed_services = [int(s)
+        for s in self.request.get('removed_services').split()]
 
     for sindex in range(num_services):
       service_subset = param_subset(self.request.params, 's_%s_' % sindex)
@@ -149,6 +164,9 @@ class EditHandler(BaseHandler):
         else:
           service = Service()
           loc.services.append(service)
+      if for_put and sindex in removed_services:
+        loc.services.remove(service)
+        continue
 
       if service_index == sindex:
         selected_service = service
@@ -168,19 +186,19 @@ class EditHandler(BaseHandler):
       service.times = []
       num_times = min(100, int(service_subset.get('num_times')))
       for i in range(num_times):
-        arg = lambda name: service_subset.get('%s_%s' % (name, i))
-        if arg('day'):
-          parse_time = lambda h, m: datetime.strptime(h+m, '%H%M').time()
-          service.times.append(ServiceTime(
-              day=DAY_NAMES.index(arg('day')),
-              start=parse_time(arg('start_hr'), arg('start_min')),
-              end=parse_time(arg('end_hr'), arg('end_min'))))
+        subset = param_subset(service_subset, suffix='_%s' % i)
+        if 'day' in subset:
+          start, end = parse_time_range(subset)
+          service.times.append(models.ServiceTime(
+              day=DAY_NAMES.index(subset.get('day')),
+              start=start,
+              end=end))
 
       service.not_dates = []
       num_not_dates = min(100, int(service_subset.get('num_not_dates')))
       for i in range(num_not_dates):
         subset = param_subset(service_subset, 'not_date_%s_' % i)
-        not_date = ServiceNotDate()
+        not_date = models.ServiceNotDate()
         service.not_dates.append(not_date)
         if subset.get('month'):
           not_date.month = int(subset.get('month'))
@@ -190,8 +208,12 @@ class EditHandler(BaseHandler):
     return selected_service
    
 
-def param_subset(params, prefix):
-  return MultiDict([(k[len(prefix):], v)
+def param_subset(params, prefix='', suffix=''):
+  return MultiDict([(k[len(prefix):(-len(suffix) or None)], v)
                     for k, v in params.iteritems()
-                    if k.startswith(prefix)])
+                    if k.startswith(prefix) and k.endswith(suffix)])
 
+def parse_time_range(params):
+  parse_time = lambda h, m: datetime.strptime(h+m, '%H%M').time()
+  return (parse_time(params.get('start_hr'), params.get('start_min')),
+      parse_time(params.get('end_hr'), params.get('end_min')))

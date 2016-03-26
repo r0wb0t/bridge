@@ -102,7 +102,7 @@ class AppEngineBackend(BackendBase):
             location=LatLong.from_geo(loc.geo),
             website=loc.websites and loc.websites[0] or None)
         result.id = loc.key.id()
-        result.phones = loc.phones
+        result.phone = loc.phone
         result.accessible = loc.accessible
         result.service_id = service.service_id
         result.service_type = service.service_type

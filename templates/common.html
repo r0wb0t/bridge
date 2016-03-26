@@ -7,17 +7,19 @@
 {%- endmacro %}
 
 {% macro timerange(start, end) -%}
-  {% if not end %}
+  {%- if not end -%}
     {{ time(start) }}
-  {% else %}
+  {%- else -%}
     {{ time(start, show_am_pm=(start.strftime('%p') != end.strftime('%p'))) }}-{{ time(end) }}
-  {% endif %}
+  {%- endif -%}
 {%- endmacro %}
 
 {% macro phone(number) -%}
-  {% for part in number|string|batch(3) -%}
-    {% if not loop.first and not loop.last %}-{% endif %}{{ part|join }}
-  {%- endfor %}
+  {% if number %}
+    {% for part in number|string|batch(3) -%}
+      {% if not loop.first and not loop.last %}-{% endif %}{{ part|join }}
+    {%- endfor %}
+  {% endif %}
 {%- endmacro %}
 
 {% macro timestamp(dt) -%}

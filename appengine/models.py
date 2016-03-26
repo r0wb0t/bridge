@@ -105,13 +105,20 @@ class Service(ndb.Model):
   extra_notes = ndb.TextProperty()
 
 
+class ServicePhone(ndb.Model):
+  number = ndb.StringProperty()
+  days = ndb.IntegerProperty(repeated=True)
+  start = ndb.TimeProperty()
+  end = ndb.TimeProperty()
+  
+
 class Location(ndb.Model):
   org_name = ndb.StringProperty()
 
   name = ndb.StringProperty()
   address = ndb.TextProperty()
   geo = ndb.GeoPtProperty()
-  phones = ndb.IntegerProperty(repeated=True)
+  phone = ndb.LocalStructuredProperty(ServicePhone)
   websites = ndb.StringProperty(repeated=True)
 
   services = ndb.LocalStructuredProperty(Service, repeated=True)
