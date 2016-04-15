@@ -14,7 +14,7 @@ from datamodel import ServiceType, SearchSection
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(
         os.path.join(os.path.dirname(__file__), '../templates')),
-    extensions=['jinja2.ext.autoescape', 'jinja2.ext.i18n'],
+    extensions=['jinja2.ext.autoescape', 'jinja2.ext.i18n', 'jinja2.ext.do'],
     autoescape=True)
 JINJA_ENVIRONMENT.install_null_translations()
 

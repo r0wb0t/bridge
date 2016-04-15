@@ -81,9 +81,21 @@ class EditHandler(BaseHandler):
         removed_services.remove(service_index)
       elif 'add_time' in self.request.params:
         assert service
-        day = DAY_NAMES.index(self.request.get('add_time'))
+        params = self.request.get('add_time').split(',')
+        day = DAY_NAMES.index(params[0])
         assert 0 <= day < 7, day
-        service.times.append(models.ServiceTime(day=day))
+        new_time = models.ServiceTime(day=day)
+        
+        if len(params) > 1:
+          prototype = service.times[int(params[1])]
+        elif service.times:
+          prototype = service.times[-1]
+        else:
+          prototype = None
+        service.times.append(models.ServiceTime(
+          day=day,
+          start=prototype and prototype.start or None,
+          end=prototype and prototype.end or None))
       elif 'remove_time' in self.request.params:
         assert service
         index = int(self.request.get('remove_time'))

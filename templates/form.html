@@ -245,12 +245,14 @@ input.save {
     <table>
       <colgroup width="0*"></colgroup><colgroup width="99%"></colgroup>
       <tbody>
+      {% set time_order = [] %}
       {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
         {% set day_index = loop.index0 %}
         <tr><td>{{ day }}</td>
             <td>
               {% for time in service.times %}
                 {% if time.day == day_index %}
+                  {% do time_order.append(loop.index0) %}
                   <input type=hidden name={{ sprefix ~ '_day_' ~ loop.index0 }} value="{{ day.lower() }}">
                   {% if not loop.first %}<br>{% endif %}
                   {{ time_fields(sprefix, loop.index0, time, removed) }}
@@ -264,7 +266,8 @@ input.save {
                 {% endif %}
               {% endfor %}
               <button name="add_time"
-                      value="{{ day.lower() }}"
+                      value="{{ day.lower() -}}
+                             {%- if time_order %},{{ time_order[-1] }}{% endif %}"
                       formaction="#services"
                       {{ disabledif(removed) }}>
                 add
