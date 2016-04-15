@@ -129,10 +129,10 @@
         {% if result.requires_ticket %}<li>Requires Ticket{% endif %}
         {% if result.requires_local_addr %}<li>Requires Local Address{% endif %}
         {% if result.requires_church_attend %}<li>Requires Church Attendence{% endif %}
+        {% if result.service_notes %}
+          <li>{{ result.service_notes }}
+        {% endif %}
       </ul>
-      {% if result.service_notes %}
-        <div>{{ result.service_notes }}</div>
-      {% endif %}
     </div>
     {% if result.id %}
       <div class="metadata">

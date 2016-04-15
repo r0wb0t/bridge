@@ -149,7 +149,8 @@ input.save {
   <tr><td>Phone</td>
       <td>
         {% if loc.phone %}
-          <input type=tel name=phone_number value="{{ loc.phone.number }}">
+          <input type=tel name=phone_number
+                 value="{% if loc.phone.number %}{{ loc.phone.number }}{% endif %}">
           <button name=remove_phone class="rem">remove</button><br>
           {% for day in range(7) %}
             <label>
