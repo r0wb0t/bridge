@@ -57,8 +57,8 @@
           {% else %}
             {{ _(result.service_type.name) }}
           {% endif %} 
-          <br>
         {% endif %}
+        @ {{ result.name }}
       </h2>
 
       <div>
@@ -67,7 +67,6 @@
           <a href="/locations/{{ result.id }}">More Information</a>
         </div>
 
-        {{ result.name }}
         {% if result.phone and result.phone.number %}
           •
           {{ result.phone.number }}
@@ -106,17 +105,19 @@
     <div class="meals">
       <table class="timetable">
       <tr>
+      {% set first = true %}
       {% for offset in range(7) %}
         {% set day = (search_context.now.weekday() + offset) % 7 %}
         <td class="{{ loop.cycle('odd', 'even') }}
-            {% if day == search_context.now.weekday() %}today{% endif %}">
+            {% if offset == 0 %}today{% endif %}
+            {% if result.service_days[day] and first %}next {% set first = false %}{% endif %}">
           <div class="day-name">
             {{ ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][day] }}
           </div>
           {% for service_time in result.service_days[day] %}
             <div>{{ common.timerange(service_time.start, service_time.end) }}</div>
           {% else %}
-            <div class="closed">Closed</div>
+            <div class="closed"></div>
           {% endfor %}
         </td>
       {% endfor %}

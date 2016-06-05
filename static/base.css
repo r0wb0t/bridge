@@ -141,7 +141,7 @@ body.page .content {
 
 .results .timetable td {
   border-right: 0.5em solid #fff;
-  width: 9em;
+  width: 8em;
   text-align: center;
   vertical-align: top;
   padding-top: 2ex;
@@ -162,12 +162,17 @@ body.page .content {
 }
 
 .results .timetable td.today {
+  width: 16em;
   background-color: #999;
   color: #fff;
 }
 
 .results .timetable td.today .closed {
   color: #eee;
+}
+
+.results .timetable td.next {
+  border: 2px solid green;
 }
 
 .results .today {
@@ -193,8 +198,8 @@ body.page .content {
 
 .map {
   float: left;
-  width: 256px;
-  height: 256px;
+  width: 150px;
+  height: 150px;
   margin-right: 2em;
 }
 

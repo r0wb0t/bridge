@@ -162,7 +162,10 @@ class Ranker(object):
   def dayscore(self, result):
     if len(result.days()) == 0:
       return 10
-    return min((day - self.now.weekday()) % 7 for day in result.days())
+    return min((day - self.now.weekday()) % 7 for day in result.days()) / 7.0
+
+  def timescore(self, result):
+    return result. min()
 
 
 # Backends.
