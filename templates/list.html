@@ -40,7 +40,7 @@
   {% if section == SearchSection.TODAY %}
     <div class="section-header"><span>TODAY</span></div>
   {% else %}
-    <div class="section-header"><span>LATER</span></div>
+    <div class="section-header"><span>LATER THIS WEEK</span></div>
   {% endif %}
 
   <ul class="results">
@@ -68,6 +68,7 @@
         </div>
 
         {% if result.phone and result.phone.number %}
+          {{ result.address }}
           •
           {{ result.phone.number }}
           {% set has_days = (result.phone.days|length) not in [0,7] %}

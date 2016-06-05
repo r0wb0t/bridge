@@ -163,23 +163,13 @@ body.page .content {
 
 .results .timetable td.today {
   width: 16em;
-  background-color: #999;
-  color: #fff;
 }
 
 .results .timetable td.today .closed {
-  color: #eee;
 }
 
 .results .timetable td.next {
   border: 2px solid #000;
-}
-
-.results .today {
-  background-color: #dfa554;
-  color: #fff;
-  border-top-color: #dfa554;
-  border-bottom-color: #dfa554;
 }
 
 .results .props {
