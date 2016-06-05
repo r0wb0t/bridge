@@ -172,7 +172,7 @@ body.page .content {
 }
 
 .results .timetable td.next {
-  border: 2px solid green;
+  border: 2px solid #000;
 }
 
 .results .today {
