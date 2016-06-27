@@ -1,0 +1,28 @@
+* { margin:0px; padding:0px; position:relative; }
+img { border:0 none; }
+
+
+/* * * LINKS * * */
+a:link, a:hover, a:active, a:visited { text-decoration:none; }
+
+
+/* * *  CENTERING  * * * */
+html { background:#FFF url(../../images/headerBG.png) repeat-x 0 0;  }
+body { text-align:center; }
+#centered{
+    width: 980px;
+    text-align:left;
+    margin: 0 auto;
+}
+
+/* * *  CONTENT  * * * */
+
+
+/* * *  FOOTER  * * * */
+footer {
+    overflow: hidden;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background:url(../../images/logBG.png) repeat-x 0 0;
+}
