@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% import "common.html" as common %}
+{% import "common.html" as common with context %}
 
 {% block classes %}page edit{% endblock %}
 {% block body %}
@@ -126,16 +126,53 @@ input.save {
 <input type=hidden name=num_services value="{{ loc.services|length }}">
 <input type=hidden name=removed_services value="{{ removed_services|default([])|join(' ') }}">
 
-<input type=submit
-       class="save"
-       name="save"
-       value="Save"
-       style="position:fixed;z-index:100;right:10px;">
+{% if not add_log %}
+  <input type=submit
+         class="save"
+         name="save"
+         value="Save"
+         style="position:fixed;z-index:100;right:10px;">
+{% endif %}
 
 <table>
 <colgroup width="0*"></colgroup><colgroup width="99%"></colgroup>
 <tbody>
   <tr><td>Name</td><td><input name=name id=name value="{{ loc.name }}"></td></tr>
+  
+  {% if loc.key %}
+    <tr><td>Log</td>
+        <td>
+          {% if add_log %}
+            <select name=log_type>
+              <option>Other
+            </select><br>
+            <textarea name=log_message cols=50 rows=3></textarea><br>
+            <button name=add_log>add</button>
+            <button name=cancel class="rem">cancel</button>
+          {% else %}
+            <button name=begin_log>add entry</button></td>
+          {% endif %}
+        </td>
+    </tr>
+    <tr><td colspan=2>
+      <div class="log">
+      {% for logitem in logs %}
+        <div class="logitem">
+          {% if logitem.type == LogItemType.NOTE %}
+            {{ logitem.note.text }}
+          {% elif logitem.type == LogItemType.DELTA %}
+            something changed
+          {% endif %}
+          <div class="metadata">
+            {% if logitem.user_id %}{{ logitem.user_id }}{% endif %}
+            {% if logitem.timestamp %}{{ common.timestamp(logitem.timestamp) }}{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+      </div>
+    </td></tr>
+  {% endif %}
+
   <tr><td>Address</td><td><input name=address id=address size="64" value="{{ loc.address }}"></td></tr>
   <tr><td>Geo Location</td>
       <td><input name=location
@@ -146,205 +183,214 @@ input.save {
           <img src="" width=175 height=100 id=map>
       </td>
   </tr>
-  <tr><td>Phone</td>
-      <td>
-        {% if loc.phone %}
-          <input type=tel name=phone_number
-                 value="{% if loc.phone.number %}{{ loc.phone.number }}{% endif %}">
-          <button name=remove_phone class="rem">remove</button><br>
-          {% for day in range(7) %}
-            <label>
-              <input type=checkbox
-                     name=phone_day_{{ day }}
-                     {{ checkedif(not loc.phone.days or day in loc.phone.days) }}>
-              {{ ['M','Tu','W','Th','F','Sa','Su'][day] }}
-            </label>&nbsp;
-          {% endfor %}<br>
-          {{ time_fields('phone', 0, loc.phone) }}
-        {% else %}
-          <button name=add_phone>add phone</button>
-        {% endif %}
-      </td>
-  </tr>
-  <tr><td>Website</td><td><input name=website id=website value="{{ loc.websites|join(' ') }}"></td></tr>
-  <tr><td>ADA Accessible</td>
-      <td><input type=checkbox name=accessible {{ checkedif(loc.accessible) }}></td></tr>
-</tbody>
-<tbody>
-  <tr><th colspan=2>
-    <a name=services></a>
-    {% for other_service in loc.services %}
-      {% set removed = removed_services and (loop.index0 in removed_services) %}
-      {% if service_index == loop.index0 %}
-        <span class="service-tab {% if removed %}removed{% endif %}">
-          {{ other_service.service_detail|default('<Service>', true) }}
-        </span>
-      {% else %}
-        <button name="switch_service"
-                value="{{ loop.index0 }}"
-                class="service-tab {% if removed %}removed{% endif %}">
-          {{ other_service.service_detail|default('<Service>', true) }}
-        </button>
-      {% endif %}
-    {% endfor %}
-    <button name="add_service" class="service-tab">+ Add New Service</button>
-    </th>
-  </tr>
-</tbody>
 
-{% for service in loc.services %}
-  {% set sprefix = 's_' ~ loop.index0 %}
-  {% set show_service = service_index == loop.index0 %}
-  {% set removed = removed_services and (loop.index0 in removed_services) %}
-  <input type=hidden name={{ sprefix }}_service_id value="{{ service.service_id if service.service_id is not none }}">
-  <input type=hidden name={{ sprefix }}_num_times value="{{ service.times|length }}">
-  <input type=hidden name={{ sprefix }}_num_not_dates value="{{ service.not_dates|length }}">
-
-  {% if show_service and removed %}
-    <tbody><tr><td colspan=2>
-      <button name="restore_service">+ Restore Service</button>
-    </td></tr></tbody>
-  {% endif %}
-  <tbody {% if not show_service %}style="display:none"{% endif %}
-         class="{% if removed %}disabled{% endif %}">
-    {% set id = sprefix ~ '_service_type' %}
-    <tr><td><label for={{ id }}>Service Type</label></td><td>
-    <select name={{ id }} id={{ id }} {{ disabledif(removed) }}>
-      {% for service_type in ServiceType.names() %}
-        <option value="{{ service_type }}"
-                {% if service and
-                      service.service_type == ServiceType.for_name(service_type) %}
-                  selected
-                {% endif %}>{{ _(service_type) }}
-      {% endfor %}
-    </select>
-    </td></tr>
-    {% set id = sprefix ~ '_service_detail' %}
-    <tr><td><label for={{ id }}>Service Detail</label></td>
-        <td><input name={{ id }} id={{ id }}
-                   value="{{ service.service_detail|default('', true) }}"
-                   {{ disabledif(removed) }}>
+  {% if loc.key %}
+    <tr><td>Phone</td>
+        <td>
+          {% if loc.phone %}
+            <input type=tel name=phone_number
+                   value="{% if loc.phone.number %}{{ loc.phone.number }}{% endif %}">
+            <button name=remove_phone class="rem">remove</button><br>
+            {% for day in range(7) %}
+              <label>
+                <input type=checkbox
+                       name=phone_day_{{ day }}
+                       {{ checkedif(not loc.phone.days or day in loc.phone.days) }}>
+                {{ ['M','Tu','W','Th','F','Sa','Su'][day] }}
+              </label>&nbsp;
+            {% endfor %}<br>
+            {{ time_fields('phone', 0, loc.phone) }}
+          {% else %}
+            <button name=add_phone>add phone</button>
+          {% endif %}
         </td>
     </tr>
-  </tbody>
-  <tbody {% if not show_service %}style="display:none"{% endif %}
-         class="{% if removed %}disabled{% endif %}">
-    <tr><td>Service Times</td><td>
-    
-    {% macro date_fields(prefix, d) -%}
-      <select name={{ prefix }}_month {{ disabledif(removed) }}>
-      {% for month in range(1, 13) %}
-        <option value="{{ month }}"
-                {% if d and d.month == month %}selected{% endif %}>
-            {{ date(2000, month, 1).strftime('%B') }}
-      {% endfor %}
-      </select>
-      <input name={{ prefix }}_day type=number min=1 max=31 step=1 value="{{d.day if d else 1}}">
-    {%- endmacro %}
+    <tr><td>Website</td><td><input name=website id=website value="{{ loc.websites|join(' ') }}"></td></tr>
+    <tr><td>ADA Accessible</td>
+        <td><input type=checkbox name=accessible {{ checkedif(loc.accessible) }}></td></tr>
+  {% endif %}
+</tbody>
 
-    <table>
-      <colgroup width="0*"></colgroup><colgroup width="99%"></colgroup>
-      <tbody>
-      {% set time_order = [] %}
-      {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
-        {% set day_index = loop.index0 %}
-        <tr><td>{{ day }}</td>
-            <td>
-              {% for time in service.times %}
-                {% if time.day == day_index %}
-                  {% do time_order.append(loop.index0) %}
-                  <input type=hidden name={{ sprefix ~ '_day_' ~ loop.index0 }} value="{{ day.lower() }}">
-                  {% if not loop.first %}<br>{% endif %}
-                  {{ time_fields(sprefix, loop.index0, time, removed) }}
-                  <button name="remove_time"
-                          value="{{ loop.index0 }}"
-                          formaction="#services"
-                          class="rem"
-                          {{ disabledif(removed) }}>
-                    remove
-                  </button>
-                {% endif %}
-              {% endfor %}
-              <button name="add_time"
-                      value="{{ day.lower() -}}
-                             {%- if time_order %},{{ time_order[-1] }}{% endif %}"
-                      formaction="#services"
-                      {{ disabledif(removed) }}>
-                add
-              </button>
-            </td>
-        </tr>
+{% if loc.key %}
+
+  <tbody>
+    <tr><th colspan=2>
+      <a name=services></a>
+      {% for other_service in loc.services %}
+        {% set removed = removed_services and (loop.index0 in removed_services) %}
+        {% if service_index == loop.index0 %}
+          <span class="service-tab {% if removed %}removed{% endif %}">
+            {{ other_service.service_detail|default('<Service>', true) }}
+          </span>
+        {% else %}
+          <button name="switch_service"
+                  value="{{ loop.index0 }}"
+                  class="service-tab {% if removed %}removed{% endif %}">
+            {{ other_service.service_detail|default('<Service>', true) }}
+          </button>
+        {% endif %}
       {% endfor %}
-      </tbody>
-      {% if service.not_dates %}
+      <button name="add_service" class="service-tab">+ Add New Service</button>
+      </th>
+    </tr>
+  </tbody>
+
+  {% for service in loc.services %}
+    {% set sprefix = 's_' ~ loop.index0 %}
+    {% set show_service = service_index == loop.index0 %}
+    {% set removed = removed_services and (loop.index0 in removed_services) %}
+    <input type=hidden name={{ sprefix }}_service_id value="{{ service.service_id if service.service_id is not none }}">
+    <input type=hidden name={{ sprefix }}_num_times value="{{ service.times|length }}">
+    <input type=hidden name={{ sprefix }}_num_not_dates value="{{ service.not_dates|length }}">
+
+    {% if show_service and removed %}
+      <tbody><tr><td colspan=2>
+        <button name="restore_service">+ Restore Service</button>
+      </td></tr></tbody>
+    {% endif %}
+    <tbody {% if not show_service %}style="display:none"{% endif %}
+           class="{% if removed %}disabled{% endif %}">
+      {% set id = sprefix ~ '_service_type' %}
+      <tr><td><label for={{ id }}>Service Type</label></td><td>
+      <select name={{ id }} id={{ id }} {{ disabledif(removed) }}>
+        {% for service_type in ServiceType.names() %}
+          <option value="{{ service_type }}"
+                  {% if service and
+                        service.service_type == ServiceType.for_name(service_type) %}
+                    selected
+                  {% endif %}>{{ _(service_type) }}
+        {% endfor %}
+      </select>
+      </td></tr>
+      {% set id = sprefix ~ '_service_detail' %}
+      <tr><td><label for={{ id }}>Service Detail</label></td>
+          <td><input name={{ id }} id={{ id }}
+                     value="{{ service.service_detail|default('', true) }}"
+                     {{ disabledif(removed) }}>
+          </td>
+      </tr>
+    </tbody>
+    <tbody {% if not show_service %}style="display:none"{% endif %}
+           class="{% if removed %}disabled{% endif %}">
+      <tr><td>Service Times</td><td>
+      
+      {% macro date_fields(prefix, d) -%}
+        <select name={{ prefix }}_month {{ disabledif(removed) }}>
+        {% for month in range(1, 13) %}
+          <option value="{{ month }}"
+                  {% if d and d.month == month %}selected{% endif %}>
+              {{ date(2000, month, 1).strftime('%B') }}
+        {% endfor %}
+        </select>
+        <input name={{ prefix }}_day type=number min=1 max=31 step=1 value="{{d.day if d else 1}}">
+      {%- endmacro %}
+
+      <table>
+        <colgroup width="0*"></colgroup><colgroup width="99%"></colgroup>
         <tbody>
-          <tr><td>Except</td>
+        {% set time_order = [] %}
+        {% for day in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
+          {% set day_index = loop.index0 %}
+          <tr><td>{{ day }}</td>
               <td>
-                {% for d in service.not_dates %}
-                    {{ date_fields(sprefix ~ '_not_date_' ~ loop.index0, d) }}
-                    <button name="remove_not_date"
+                {% for time in service.times %}
+                  {% if time.day == day_index %}
+                    {% do time_order.append(loop.index0) %}
+                    <input type=hidden name={{ sprefix ~ '_day_' ~ loop.index0 }} value="{{ day.lower() }}">
+                    {% if not loop.first %}<br>{% endif %}
+                    {{ time_fields(sprefix, loop.index0, time, removed) }}
+                    <button name="remove_time"
                             value="{{ loop.index0 }}"
                             formaction="#services"
                             class="rem"
                             {{ disabledif(removed) }}>
                       remove
                     </button>
-                  </td></tr>
+                  {% endif %}
                 {% endfor %}
+                <button name="add_time"
+                        value="{{ day.lower() -}}
+                               {%- if time_order %},{{ time_order[-1] }}{% endif %}"
+                        formaction="#services"
+                        {{ disabledif(removed) }}>
+                  add
+                </button>
               </td>
           </tr>
+        {% endfor %}
         </tbody>
-      {% endif %}
-      <tbody><tr><td colspan=2>
-        <button name="add_not_date"
-                formaction="#services"
-                {{ disabledif(removed) }}>
-          + Add Exception
-        </button>
-      </td></tr></tbody>
-    </table>
+        {% if service.not_dates %}
+          <tbody>
+            <tr><td>Except</td>
+                <td>
+                  {% for d in service.not_dates %}
+                      {{ date_fields(sprefix ~ '_not_date_' ~ loop.index0, d) }}
+                      <button name="remove_not_date"
+                              value="{{ loop.index0 }}"
+                              formaction="#services"
+                              class="rem"
+                              {{ disabledif(removed) }}>
+                        remove
+                      </button>
+                    </td></tr>
+                  {% endfor %}
+                </td>
+            </tr>
+          </tbody>
+        {% endif %}
+        <tbody><tr><td colspan=2>
+          <button name="add_not_date"
+                  formaction="#services"
+                  {{ disabledif(removed) }}>
+            + Add Exception
+          </button>
+        </td></tr></tbody>
+      </table>
 
-    </td></tr>
-  </tbody>
-  <tbody {% if not show_service %}style="display:none"{% endif %}
-         class="{% if removed %}disabled{% endif %}">
-    {% set id = sprefix ~ '_requires_ticket' %}
-    <tr><td><label for={{ id }}>Requires Ticket</label></td>
-        <td><input type=checkbox
-                   name={{ id }} id={{ id }}
-                   {{ checkedif(service.requires_ticket) }}
-                   {{ disabledif(removed) }}>
-        </td>
-    </tr>
-    {% set id = sprefix ~ '_requires_local_addr' %}
-    <tr><td><label for={{ id }}>Requires Local Address</label></td>
-        <td><input type=checkbox
-                   name={{ id }} id={{ id }}
-                   {{ checkedif(service.requires_local_addr) }}
-                   {{ disabledif(removed) }}>
-        </td>
-    </tr>
-    {% set id = sprefix ~ '_requires_church_attend' %}
-    <tr><td><label for={{ id }}>Requires Church Attendence</label></td>
-        <td><input type=checkbox
-                   name={{ id }} id={{ id }}
-                   {{ checkedif(service.requires_church_attend) }}
-                   {{ disabledif(removed) }}></td>
-    </tr>
-    {% set id = sprefix ~ '_extra_notes' %}
-    <tr><td><label for={{ id }}>Extra Notes</label></td>
-        <td><textarea rows=10 cols=40
-                      name={{ id }} id={{ id }}
-                      {{ disabledif(removed) }}>{{ service.extra_notes|default('', true) }}</textarea>
-        </td>
-    </tr>
-  </tbody>
-  {% if show_service and not removed %}
-    <tbody><tr><td colspan=2>
-      <button name="remove_service" class="rem">- Remove Service</button>
-    </td></tr></tbody>
-  {% endif %}
-{% endfor %}
+      </td></tr>
+    </tbody>
+    <tbody {% if not show_service %}style="display:none"{% endif %}
+           class="{% if removed %}disabled{% endif %}">
+      {% set id = sprefix ~ '_requires_ticket' %}
+      <tr><td><label for={{ id }}>Requires Ticket</label></td>
+          <td><input type=checkbox
+                     name={{ id }} id={{ id }}
+                     {{ checkedif(service.requires_ticket) }}
+                     {{ disabledif(removed) }}>
+          </td>
+      </tr>
+      {% set id = sprefix ~ '_requires_local_addr' %}
+      <tr><td><label for={{ id }}>Requires Local Address</label></td>
+          <td><input type=checkbox
+                     name={{ id }} id={{ id }}
+                     {{ checkedif(service.requires_local_addr) }}
+                     {{ disabledif(removed) }}>
+          </td>
+      </tr>
+      {% set id = sprefix ~ '_requires_church_attend' %}
+      <tr><td><label for={{ id }}>Requires Church Attendence</label></td>
+          <td><input type=checkbox
+                     name={{ id }} id={{ id }}
+                     {{ checkedif(service.requires_church_attend) }}
+                     {{ disabledif(removed) }}></td>
+      </tr>
+      {% set id = sprefix ~ '_extra_notes' %}
+      <tr><td><label for={{ id }}>Extra Notes</label></td>
+          <td><textarea rows=10 cols=40
+                        name={{ id }} id={{ id }}
+                        {{ disabledif(removed) }}>{{ service.extra_notes|default('', true) }}</textarea>
+          </td>
+      </tr>
+    </tbody>
+    {% if show_service and not removed %}
+      <tbody><tr><td colspan=2>
+        <button name="remove_service" class="rem">- Remove Service</button>
+      </td></tr></tbody>
+    {% endif %}
+  {% endfor %}
+
+{% endif %}
+
 </table>
 </form>
 </div>

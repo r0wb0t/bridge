@@ -1,14 +1,19 @@
+from datetime import datetime
+
 from google.appengine.ext import ndb
 from google.appengine.ext.ndb.msgprop import MessageProperty
 
 import datamodel
 
 
-def message_model(id_field):
+def message_model(id_field=None, auto_now=[]):
   class Mixin:
     def _pre_put_hook(self):
-      if self.key.id() is None and getattr(self.message, id_field) is not None:
+      if id_field and self.key.id() is None and getattr(self.message, id_field) is not None:
         self.key = ndb.Key(UserProfile, getattr(self.message, id_field))
+
+      for field in auto_now:
+        setattr(self.message, field, datetime.utcnow())
 
     @classmethod
     def _post_get_hook(cls, key, future):
@@ -17,12 +22,13 @@ def message_model(id_field):
         obj.populate_id()
 
     def populate_id(self):
-      if getattr(self.message, id_field) is None:
+      if id_field and getattr(self.message, id_field) is None:
         setattr(self.message, id_field, self.key.id())
 
-    def get_id(self):
-      assert getattr(self.message, id_field)
-      return getattr(self.message, id_field)
+    @classmethod
+    def get_key(cls, message):
+      assert id_field
+      return ndb.Key(cls, getattr(message, id_field))
       
   return Mixin
 
@@ -70,6 +76,13 @@ class AdminInvite(message_model(id_field='id'), ndb.Model):
       datamodel.AdminInvite,
       indexed_fields=['code'])
 
+
+class LogItem(message_model(auto_now=['timestamp']), ndb.Model):
+  message = MessageProperty(
+      datamodel.LogItem.Storage)
+ 
+  log_for = ndb.KeyProperty()
+ 
 
 class KioskLocation(ndb.Model):
   name = ndb.StringProperty()

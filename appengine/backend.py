@@ -17,7 +17,12 @@ class AppEngineBackend(BackendBase):
     self.typedict = {
       datamodel.UserProfile: models.UserProfile,
       datamodel.AdminInvite: models.AdminInvite,
+      datamodel.LogItem: models.LogItem,
     }
+
+  def type(self, dataobject):
+    assert type(dataobject) in self.typedict, type(dataobject)
+    return self.typedict[type(dataobject)]
 
   def is_user_admin(self):
     if users.is_current_user_admin():
@@ -56,20 +61,28 @@ class AppEngineBackend(BackendBase):
   def get_by_id(self, datatype, id):
     return self.typedict[datatype].get_by_id(id).message
 
-  def save(self, dataobject):
-    self.typedict[type(dataobject)](message=dataobject).put()    
+  def save(self, dataobject, **kwargs):
+    object = self.type(dataobject)(message=dataobject.get_message())
+    for field, related_dataobject in kwargs.items():
+      if isinstance(related_dataobject, ndb.Key):
+        key = related_dataobject
+      else:
+        key = self.type(related_dataobject).get_key(related_dataobject)
+      setattr(object, field, key)
+    object.put()
 
   def delete_async(self, dataobject):
-    model_type = self.typedict[type(dataobject)]
-    id = model_type(message=dataobject).get_id()
-    return ndb.Key(model_type, id).delete_async()    
+    return self.type(dataobject).get_key(dataobject).delete_async()    
 
   @ndb.tasklet
   def find(self, datatype, **kwargs):
     queryargs = []
     modeltype = self.typedict[datatype]
     for k,v in kwargs.iteritems():
-      prop = modeltype.message.__getattr__(k)
+      if hasattr(modeltype, k):
+        prop = getattr(modeltype, k)
+      else:
+        prop = getattr(modeltype.message, k)
       queryargs.append(prop == v)
 
     results = yield self.typedict[datatype].query(*queryargs).fetch_async()

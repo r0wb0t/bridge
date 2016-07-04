@@ -215,6 +215,25 @@ body.edit td {
   vertical-align: top;
 }
 
+body.edit .log {
+  position: relative;
+  height: 10ex;
+  overflow: auto;
+  border: 1px solid #000;
+  margin-right: 8em;
+}
+
+body.edit .logitem {
+  border-bottom: 1px dotted #ccc;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+body.edit .logitem .metadata {
+  font-size: smaller;
+  color: #999;
+}
+
 body.edit .disabled td {
   color: gray;
 }

@@ -8,6 +8,7 @@ from base import BaseHandler, login_required
 
 from appengine import models
 from appengine.models import Location, Service
+import datamodel
 from datamodel import LatLong, ServiceType
 
 
@@ -19,11 +20,18 @@ class EditHandler(BaseHandler):
   def get(self):
     loc = None
     service_index = None
+    logs = []
     if self.request.get('id'):
-      loc = Location.get_by_id(int(self.request.get('id')))
+      loc_id = int(self.request.get('id'))
+      loc = Location.get_by_id(loc_id)
 
       if self.request.get('service_id'):
         service_index = loc.service_index(int(self.request.get('service_id')))
+
+      logs = list(self.backend.find(
+          datamodel.LogItem,
+          log_for=ndb.Key(Location, loc_id)).get_result())
+      logs.sort(key=lambda i: i.timestamp, reverse=True)
 
     all_locs = Location.query().order(Location.name)
 
@@ -31,6 +39,7 @@ class EditHandler(BaseHandler):
       'all_locs': all_locs,
       'loc': loc,
       'service_index': service_index,
+      'logs': logs,
       'redirect_to': self.request.get('r'),
     })
 
@@ -55,9 +64,15 @@ class EditHandler(BaseHandler):
       all_locs = Location.query().order(Location.name)
 
       if self.request.get('id'):
-        loc = Location.get_by_id(int(self.request.get('id')))
+        loc_id = int(self.request.get('id'))
+        loc = Location.get_by_id(loc_id)
+        logs = list(self.backend.find(
+            datamodel.LogItem,
+            log_for=ndb.Key(Location, loc_id)).get_result())
+        logs.sort(key=lambda i: i.timestamp, reverse=True)
       else:
         loc = Location()
+        logs = []
       service = self.populate(loc)
 
       service_index = None
@@ -111,13 +126,22 @@ class EditHandler(BaseHandler):
         loc.phone = models.ServicePhone()
       elif 'remove_phone' in self.request.params:
         loc.phone = None
+      elif 'add_log' in self.request.params:
+        log = datamodel.LogItem(
+            type=datamodel.LogItemType.NOTE,
+            note=datamodel.LogItem.Storage.Note(
+                text=self.request.get('log_message')))
+        self.backend.save(log, log_for=loc.key)
+        logs.insert(0, log)
 
       self.write_template('form.html', {
         'all_locs': all_locs,
         'loc': loc,
         'service_index': service_index,
         'removed_services': removed_services,
+        'logs': logs,
         'redirect_to': self.request.get('r'),
+        'add_log': 'begin_log' in self.request.params,
       })
 
   def create(self):

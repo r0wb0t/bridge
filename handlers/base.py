@@ -9,7 +9,7 @@ from google.appengine.api import users
 from google.appengine.ext.ndb import Future
 
 import config
-from datamodel import ServiceType, SearchSection
+import datamodel
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(
@@ -18,9 +18,17 @@ JINJA_ENVIRONMENT = jinja2.Environment(
     autoescape=True)
 JINJA_ENVIRONMENT.install_null_translations()
 
-JINJA_ENVIRONMENT.globals['date'] = date
-JINJA_ENVIRONMENT.globals['SearchSection'] = SearchSection
-ServiceType.export_to(JINJA_ENVIRONMENT)
+def export_types(*types):
+  for t in types:
+    JINJA_ENVIRONMENT.globals[t.__name__] = t
+
+export_types(
+    date,
+    datamodel.LogItem,
+    datamodel.LogItemType,
+    datamodel.SearchSection,
+    datamodel.ServiceType)
+
 
 def urlencode_filter(s):
   return urllib.quote_plus(s)

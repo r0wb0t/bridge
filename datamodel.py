@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from google.appengine.ext import ndb
-from protorpc import messages
+from protorpc import messages, message_types
 
 import re
 
@@ -52,6 +52,34 @@ class Enum(object):
     jinja_env.globals[enum_type.__name__] = enum_type
 
 
+class DataObjectMeta(type):
+  def __init__(cls, name, bases, dct):
+    if 'DataObject' in globals():
+      assert bases == (DataObject,), cls
+      assert cls.Storage.__bases__ == (messages.Message,), cls
+
+    super(DataObjectMeta, cls).__init__(name, bases, dct)
+
+
+class DataObject(object):
+  __metaclass__ = DataObjectMeta
+
+  def __init__(self, **kwargs):
+    self._storage = self.__class__.Storage(**kwargs)
+
+  def __getattr__(self, name):
+    if '_storage' in self.__dict__ and name in self.__class__.Storage.__dict__:
+      return getattr(self._storage, name)
+
+  def __setattr__(self, name, value):
+    if '_storage' in self.__dict__ and name in self.__class__.Storage.__dict__:
+      return setattr(self._storage, name, value)
+    object.__setattr__(self, name, value)
+
+  def get_message(self):
+    return self._storage
+
+
 class ServiceType(Enum):
   MEAL = 1
   FREE_FOOD = 2
@@ -71,10 +99,78 @@ class AdminInvite(messages.Message):
   code = messages.StringField(1, required=True)
 
 
-class LatLong:
-  def __init__(self, lat, lon):
-    self.lat = lat
-    self.lon = lon
+class LogItemType(messages.Enum):
+  UNKNOWN = 0
+  NOTE = 1
+  DELTA = 2
+
+
+class LogItem(DataObject):
+  class Storage(messages.Message):
+    timestamp = message_types.DateTimeField(2)
+    user_id = messages.StringField(6)
+    flag = messages.BooleanField(7)
+
+    type = messages.EnumField(LogItemType, 3)
+
+    class Note(messages.Message):
+      text = messages.StringField(1)
+    note = messages.MessageField(Note, 4)
+
+    class Delta(messages.Message):
+      path = messages.StringField(1)
+      string_val = messages.StringField(2)
+    delta = messages.MessageField(Delta, 5)
+
+  log_for = [] # ForeignKey
+
+
+class Time(messages.Message):
+  hour = messages.IntegerField(1)
+  minute = messages.IntegerField(2)
+
+
+class Service(messages.Message):
+  id = messages.IntegerField(1)
+
+  class Type(messages.Enum):
+    UNKNOWN = 0
+    MEAL = 1
+    FREE_FOOD = 2
+  service_type = messages.EnumField(Type, 2)
+
+  service_detail = messages.StringField(3)
+
+  class ServiceTime(messages.Message):
+    day = messages.IntegerField(1, required=True)
+    start = messages.MessageField(Time, 2, required=True)
+    end = messages.MessageField(Time, 3)
+  times = messages.MessageField(ServiceTime, 4, repeated=True)
+
+  class ServiceNotDate(messages.Message):
+    month = messages.IntegerField(1)
+    day = messages.IntegerField(2)
+  not_dates = messages.MessageField(ServiceNotDate, 5, repeated=True)
+
+  requires_ticket = messages.BooleanField(6)
+  requires_local_addr = messages.BooleanField(7)
+  requires_church_attend = messages.BooleanField(8)
+  sixty_plus = messages.BooleanField(9)
+
+  extra_notes = messages.StringField(10)
+
+
+class ServicePhone(messages.Message):
+  number = messages.StringField(1)
+  days = messages.IntegerField(2, repeated=True)
+  start = messages.MessageField(Time, 3)
+  end = messages.MessageField(Time, 4)
+
+  
+class LatLong(DataObject):
+  class Storage(messages.Message):
+    lat = messages.FloatField(1)
+    lon = messages.FloatField(2)
 
   def geo(self):
     return ndb.GeoPt(self.lat, self.lon)
@@ -85,13 +181,30 @@ class LatLong:
 
   @classmethod
   def from_geo(cls, geopt):
-    return geopt and LatLong(geopt.lat, geopt.lon) or None
+    return geopt and LatLong(lat=geopt.lat, lon=geopt.lon) or None
 
   @classmethod
   def from_str(cls, s):
     coords = [float(d) for d in re.split(r'[, ]+', s) if d]
     if len(coords) == 2:
-      return LatLong(*coords)
+      return LatLong(lat=coords[0], lon=coords[1])
+
+
+class Location(messages.Message):
+  id = messages.IntegerField(1)
+
+  org_name = messages.StringField(2)
+
+  name = messages.StringField(3)
+  address = messages.StringField(4)
+  geo = messages.MessageField(LatLong.Storage, 5)
+  phone = messages.MessageField(ServicePhone, 6)
+  websites = messages.StringField(7, repeated=True)
+
+  accessible = messages.BooleanField(8)
+  extra_notes = messages.StringField(9)
+
+  last_modified = message_types.DateTimeField(10)
 
 
 class SearchContext(object):
