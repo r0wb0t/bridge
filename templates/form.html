@@ -7,30 +7,6 @@
 
 <style>
 
-#locations {
-  float: left;
-  width: 20em;
-  border: 1px solid #ccc;
-  border-spacing: 0;
-}
-
-#locations td {
-  padding: 10px;
-}
-
-#locations a {
-  color: #000;
-}
-
-#locations .current-loc {
-  background-color: #dfa554;
-}
-
-#locations .current-loc a {
-  color: #fff;
-  text-decoration: none;
-}
-
 #editform {
   margin-left: 20em;
   padding-left: 20px;
@@ -52,8 +28,35 @@ input.save {
 
 </style>
 
+<script>
+
+function changeLocation() {
+ var id = document.getElementById('locations').selectedOptions[0].value;
+ if (id && id != '') {
+   window.location = '/edit?id=' + id;
+ } else {
+   window.location = '/edit';
+ }
+}
+
+</script>
+
 <div class="header">
 <a href="/">Free Print Shop</a>
+
+
+<select id=locations onchange="changeLocation()">
+{% if not loc %}
+  <option value="">New Location
+{% else %}
+  <option value="">New Location
+{% endif %}
+{% for other_loc in all_locs %}
+  <option {% if loc and loc.key.id() == other_loc.key.id() %}selected{% endif %}
+          value="{{ other_loc.key.id() }}">{{ other_loc.name }}
+{% endfor %}
+</select>
+ 
 </div>
 
 {% macro checkedif(cond) -%}
@@ -99,21 +102,33 @@ input.save {
 
 <div class="content">
 
-<table id=locations>
-{% if not loc %}
-  <tr><td class="current-loc">New Location</td></tr>
-{% else %}
-  <tr><td><a href="/edit">New Location</a></td></tr>
-{% endif %}
-{% for other_loc in all_locs %}
-  <tr><td class="{% if loc and loc.key.id() == other_loc.key.id() %}current-loc{% endif %}">
-        <a href="/edit?id={{ other_loc.key.id() }}">{{ other_loc.name }}</a>
-      </td>
-  </tr>
-{% endfor %}
-</table>
-
 <form action="#" method=post id=editform>
+<div class="logview"> 
+  {% if loc.key %}
+      <select name=log_type>
+        <option>Other
+      </select><br>
+      <textarea name=log_message cols=50 rows=3></textarea><br>
+      <button name=add_log>add</button>
+
+    <div class="log">
+    {% for logitem in logs %}
+      <div class="logitem">
+        {% if logitem.type == LogItemType.NOTE %}
+          {{ logitem.note.text }}
+        {% elif logitem.type == LogItemType.DELTA %}
+          something changed
+        {% endif %}
+        <div class="metadata">
+          {% if logitem.user_id %}{{ logitem.user_id }}{% endif %}
+          {% if logitem.timestamp %}{{ common.timestamp(logitem.timestamp) }}{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
 {% if loc and loc.key %}
   <input type=hidden name=id value="{{ loc.key.id() }}">
 {% endif %}
@@ -138,40 +153,6 @@ input.save {
 <colgroup width="0*"></colgroup><colgroup width="99%"></colgroup>
 <tbody>
   <tr><td>Name</td><td><input name=name id=name value="{{ loc.name }}"></td></tr>
-  
-  {% if loc.key %}
-    <tr><td>Log</td>
-        <td>
-          {% if add_log %}
-            <select name=log_type>
-              <option>Other
-            </select><br>
-            <textarea name=log_message cols=50 rows=3></textarea><br>
-            <button name=add_log>add</button>
-            <button name=cancel class="rem">cancel</button>
-          {% else %}
-            <button name=begin_log>add entry</button></td>
-          {% endif %}
-        </td>
-    </tr>
-    <tr><td colspan=2>
-      <div class="log">
-      {% for logitem in logs %}
-        <div class="logitem">
-          {% if logitem.type == LogItemType.NOTE %}
-            {{ logitem.note.text }}
-          {% elif logitem.type == LogItemType.DELTA %}
-            something changed
-          {% endif %}
-          <div class="metadata">
-            {% if logitem.user_id %}{{ logitem.user_id }}{% endif %}
-            {% if logitem.timestamp %}{{ common.timestamp(logitem.timestamp) }}{% endif %}
-          </div>
-        </div>
-      {% endfor %}
-      </div>
-    </td></tr>
-  {% endif %}
 
   <tr><td>Address</td><td><input name=address id=address size="64" value="{{ loc.address }}"></td></tr>
   <tr><td>Geo Location</td>
