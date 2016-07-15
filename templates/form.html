@@ -61,17 +61,6 @@ function changeCategory() {
 <a href="/">Free Print Shop</a>
 
 
-<select id=locations onchange="changeLocation()">
-{% if not loc %}
-  <option value="">New Location
-{% else %}
-  <option value="">New Location
-{% endif %}
-{% for other_loc in all_locs %}
-  <option {% if loc and loc.key.id() == other_loc.key.id() %}selected{% endif %}
-          value="{{ other_loc.key.id() }}">{{ other_loc.name }}
-{% endfor %}
-</select>
  
 </div>
 
@@ -119,31 +108,52 @@ function changeCategory() {
 <div class="content">
 
 <form action="#" method=post id=editform>
-<div class="logview"> 
-  {% if loc.key %}
-      <select id="log_category" name=log_category onchange="changeCategory()">
-        <option value="Contact">Contact
-        <option value="">Other
-        <option>Add new category
-      </select><br>
-      <textarea name=log_message cols=50 rows=3></textarea><br>
-      <button name=add_log>add</button>
+<div class="leftview">
+  <div class="location">
+  <select id=locations onchange="changeLocation()">
+  {% if not loc %}
+    <option value="">New Location
+  {% else %}
+    <option value="">New Location
+  {% endif %}
+  {% for other_loc in all_locs %}
+    <option {% if loc and loc.key.id() == other_loc.key.id() %}selected{% endif %}
+            value="{{ other_loc.key.id() }}">{{ other_loc.name }}
+  {% endfor %}
+  </select>
+  </div>
 
-    <div class="log">
-    {% for logitem in logs %}
-      <div class="logitem">
-        {% if logitem.type == LogItemType.NOTE %}
-          {% if logitem.note.category %}<div class="category">{{ logitem.note.category }}</div>{% endif %}
-          {{ logitem.note.text }}
-        {% elif logitem.type == LogItemType.DELTA %}
-          something changed
-        {% endif %}
-        <div class="metadata">
-          {% if logitem.user_id %}{{ logitem.user_id }}{% endif %}
-          {% if logitem.timestamp %}{{ common.timestamp(logitem.timestamp) }}{% endif %}
-        </div>
+  {% if loc.key %}
+    <div class="logview">
+      <h3>Log</h3>
+
+      <div class="logform">
+        <textarea name=log_message rows=3 style="width:95%"></textarea><br>
+        <button name=add_log style="float:right">add</button>
+        <select id="log_category" name=log_category onchange="changeCategory()">
+          <option value="Contact">Contact
+          <option value="">Other
+          <option>Add new category
+        </select>
+        <br clear=both>
       </div>
-    {% endfor %}
+
+      <div class="log">
+      {% for logitem in logs %}
+        <div class="logitem">
+          {% if logitem.type == LogItemType.NOTE %}
+            {% if logitem.note.category %}<div class="category">{{ logitem.note.category }}</div>{% endif %}
+            {{ logitem.note.text }}
+          {% elif logitem.type == LogItemType.DELTA %}
+            something changed
+          {% endif %}
+          <div class="metadata">
+            {% if logitem.user_id %}{{ logitem.user_id }}{% endif %}
+            {% if logitem.timestamp %}{{ common.timestamp(logitem.timestamp) }}{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+      </div>
     </div>
   {% endif %}
 </div>
@@ -190,7 +200,7 @@ function changeCategory() {
           {% if loc.phone %}
             <input type=tel name=phone_number
                    value="{% if loc.phone.number %}{{ loc.phone.number }}{% endif %}">
-            <button name=remove_phone class="rem">remove</button><br>
+            <button name=remove_phone class="rem">&#x2715;</button><br>
             {% for day in range(7) %}
               <label>
                 <input type=checkbox
@@ -304,7 +314,7 @@ function changeCategory() {
                             formaction="#services"
                             class="rem"
                             {{ disabledif(removed) }}>
-                      remove
+                      &#x2715;
                     </button>
                   {% endif %}
                 {% endfor %}
@@ -330,7 +340,7 @@ function changeCategory() {
                               formaction="#services"
                               class="rem"
                               {{ disabledif(removed) }}>
-                        remove
+                        &#x2715;
                       </button>
                     </td></tr>
                   {% endfor %}

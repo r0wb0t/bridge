@@ -215,18 +215,43 @@ body.edit td {
   vertical-align: top;
 }
 
-body.edit .logview {
+body.edit h3 {
+  margin: 5px;
+  text-align: center;
+}
+
+body.edit .location {
+  background-color: #dfa554;
+  padding: 5px;
+}
+
+body.edit .leftview {
   position: fixed;
   left: 10px;
   width: 20em;
   height: 80%;
-  border: 1px solid #000;
   background-color: #fff;
 }
 
+body.edit .logview {
+  font-size: smaller;
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  top: 40px;
+  border-right: 1px dotted #ccc;
+  overflow: auto;
+}
+
+body.edit .logform {
+  padding: 5px;
+}
+
 body.edit .log {
+  clear: both;
+  margin-top: 5px;
   position: relative;
-  border-top: 1px solid #000;
+  border-top: 1px dotted #ccc;
 }
 
 body.edit .logitem {
@@ -256,10 +281,12 @@ body.edit td:first-of-type {
 
 body.edit button {
   font-size: inherit;
-  border-style: none;
-  background-color: transparent;
-  color: blue;
+  color: #000;
   cursor: pointer;
+  background-color: #dfa554;
+  border-style: none;
+  padding: 5px;
+  border-radius: 2px;
 }
 
 body.edit .disabled button {
@@ -284,7 +311,7 @@ body.edit span.service-tab {
 }
 
 body.edit button.rem {
-  color: red;
+  color: #000;
 }
 
 body.edit .disabled button.rem {
