@@ -130,7 +130,8 @@ class EditHandler(BaseHandler):
         log = datamodel.LogItem(
             type=datamodel.LogItemType.NOTE,
             note=datamodel.LogItem.Storage.Note(
-                text=self.request.get('log_message')))
+                text=self.request.get('log_message'),
+                category=self.request.get('log_category')))
         self.backend.save(log, log_for=loc.key)
         logs.insert(0, log)
 

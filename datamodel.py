@@ -115,6 +115,7 @@ class LogItem(DataObject):
 
     class Note(messages.Message):
       text = messages.StringField(1)
+      category = messages.StringField(2)
     note = messages.MessageField(Note, 4)
 
     class Delta(messages.Message):

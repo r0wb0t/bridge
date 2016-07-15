@@ -240,6 +240,11 @@ body.edit .logitem .metadata {
   color: #999;
 }
 
+body.edit .logitem .category {
+  float: right;
+  color: #999;
+}
+
 body.edit .disabled td {
   color: gray;
 }

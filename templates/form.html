@@ -39,6 +39,22 @@ function changeLocation() {
  }
 }
 
+function changeCategory() {
+ var select = document.getElementById('log_category');
+ if (select.selectedIndex == select.options.length - 1) {
+  var category = window.prompt('Enter category name', '');
+  if (category) {
+    var option = document.createElement('option');
+    option.value = category;
+    option.text = category;
+    select.add(option, select.selectedIndex);
+    select.selectedIndex = select.options.length - 2;
+  } else {
+    select.selectedIndex = 0;
+  }
+ }
+}
+
 </script>
 
 <div class="header">
@@ -105,8 +121,10 @@ function changeLocation() {
 <form action="#" method=post id=editform>
 <div class="logview"> 
   {% if loc.key %}
-      <select name=log_type>
-        <option>Other
+      <select id="log_category" name=log_category onchange="changeCategory()">
+        <option value="Contact">Contact
+        <option value="">Other
+        <option>Add new category
       </select><br>
       <textarea name=log_message cols=50 rows=3></textarea><br>
       <button name=add_log>add</button>
@@ -115,6 +133,7 @@ function changeLocation() {
     {% for logitem in logs %}
       <div class="logitem">
         {% if logitem.type == LogItemType.NOTE %}
+          {% if logitem.note.category %}<div class="category">{{ logitem.note.category }}</div>{% endif %}
           {{ logitem.note.text }}
         {% elif logitem.type == LogItemType.DELTA %}
           something changed
