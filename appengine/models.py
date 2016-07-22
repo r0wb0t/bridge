@@ -1,4 +1,5 @@
 from datetime import datetime
+from itertools import groupby
 
 from google.appengine.ext import ndb
 from google.appengine.ext.ndb.msgprop import MessageProperty
@@ -116,6 +117,12 @@ class Service(ndb.Model):
   sixty_plus = ndb.BooleanProperty()
 
   extra_notes = ndb.TextProperty()
+
+  def get_times_by_day(self):
+    key = lambda t: t.day
+    return dict(
+        (day, list(times)) for day, times
+        in groupby(sorted(self.times, key=key), key))
 
 
 class ServicePhone(ndb.Model):

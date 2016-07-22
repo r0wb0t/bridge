@@ -277,6 +277,7 @@ body.edit .disabled td {
 body.edit td:first-of-type {
   white-space: nowrap;
   padding-right: 10px;
+  padding-top: 5px;
 }
 
 body.edit button {
