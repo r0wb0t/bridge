@@ -27,6 +27,8 @@
 {% endfor %}
 </ul>
 
+<div class="sections">
+
 {% if not results or results[0].section != SearchSection.TODAY %}
   <div class="section-header"><span>TODAY</span></div>
   {% if results %}
@@ -38,17 +40,20 @@
 
 {% for section, section_results in results %}
   {% if section == SearchSection.TODAY %}
-    <div class="section-header"><span>TODAY</span></div>
+    <div class="section-header"><span>OPEN TODAY</span></div>
   {% else %}
-    <div class="section-header"><span>LATER THIS WEEK</span></div>
+    <div class="section-header"><span>OPEN LATER THIS WEEK</span></div>
   {% endif %}
 
   <ul class="results">
   {% for result in section_results %}
     <li>
-    <div class="map" 
-         data-location="{{ result.location.lat }},{{ result.location.lon }}"
-         {% if origin %}data-origin="{{ origin.lat }},{{ origin.lon }}"{% endif %}></div>
+    <div class="map-container">
+      <div class="map" 
+           data-location="{{ result.location.lat }},{{ result.location.lon }}"
+           {% if origin %}data-origin="{{ origin.lat }},{{ origin.lon }}"{% endif %}></div>
+      <a href="">DIRECTIONS &#9654;</a>
+    </div>
     <div class="heading">
       <h2>
         {% if result.service_type %}
@@ -58,50 +63,22 @@
             {{ _(result.service_type.name) }}
           {% endif %} 
         {% endif %}
-        @ {{ result.name }}
       </h2>
 
-      <div>
-        <div class="more-info">
-          <a href="/locations/{{ result.id }}"><img src="/_/s/info.png" alt="More Information"></a>
-          <a href="/locations/{{ result.id }}">More Information</a>
+      {% set times_today = result.service_days[search_context.now.weekday()] %}
+      {% if times_today %}
+        <div class="next-time">
+          {{ common.timerange(times_today[0].start, times_today[0].end) }}
         </div>
+      {% endif %}
 
-        {% if result.phone and result.phone.number %}
-          {{ result.address }}
-          •
-          {{ result.phone.number }}
-          {% set has_days = (result.phone.days|length) not in [0,7] %}
-          {% set has_hours = result.phone.start and result.phone.end %}
-          {% if has_days or has_hours -%}
-            ( 
-            {%- if has_days -%}
-              {%- for day in result.phone.days -%}
-                {%- if not loop.first
-                      and result.phone.days[loop.index0 - 1] == day - 1
-                      and (loop.last
-                          or result.phone.days[loop.index0 + 1] != day + 1) -%}
-                  -
-                {%- elif not loop.first
-                      and result.phone.days[loop.index0 - 1] != day - 1 -%}
-                  ,
-                {%- endif -%}
-                {%- if loop.first
-                      or loop.last
-                      or result.phone.days[loop.index0 - 1] != day - 1 -%}
-                  {{ ['M','Tu','W','Th','F','Sa','Su'][day] }}
-                {%- endif -%}
-              {%- endfor -%}
-            {%- endif -%}
-            {%- if has_days and has_hours %} {% endif -%}
-            {%- if has_hours -%}
-              {{ common.timerange(result.phone.start, result.phone.end) }}
-            {%- endif -%}
-            )
-          {%- endif %}
-        {% endif %}
+      <div>
+        {{ result.name }}
       </div>
 
+      <div class="more-info">
+        <a href="/locations/{{ result.id }}">MORE INFO &#9654;</a>
+      </div>
     </div>
     <div class="meals">
       <table class="timetable">
@@ -151,6 +128,8 @@
 
 <div>
 <a href="/edit">+ Add New</a>
+</div>
+
 </div>
 
 <script>

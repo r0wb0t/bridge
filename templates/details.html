@@ -34,6 +34,163 @@
   <div><span class="address">{{ result.address }}</span></div>
 {% endif %}
 
+    <div class="map-container">
+      <div class="map" 
+           data-location="{{ result.location.lat }},{{ result.location.lon }}"
+           {% if origin %}data-origin="{{ origin.lat }},{{ origin.lon }}"{% endif %}></div>
+      <a href="">DIRECTIONS &#9654;</a>
+    </div>
+    <div class="heading">
+      <h2>
+        {% if result.service_type %}
+          {% if result.service_detail %}
+            {{ result.service_detail}}
+          {% else %}
+            {{ _(result.service_type.name) }}
+          {% endif %} 
+        {% endif %}
+        @ {{ result.name }}
+      </h2>
+
+      <div>
+        {% if result.phone and result.phone.number %}
+          {{ result.address }}
+          •
+          {{ result.phone.number }}
+          {% set has_days = (result.phone.days|length) not in [0,7] %}
+          {% set has_hours = result.phone.start and result.phone.end %}
+          {% if has_days or has_hours -%}
+            ( 
+            {%- if has_days -%}
+              {%- for day in result.phone.days -%}
+                {%- if not loop.first
+                      and result.phone.days[loop.index0 - 1] == day - 1
+                      and (loop.last
+                          or result.phone.days[loop.index0 + 1] != day + 1) -%}
+                  -
+                {%- elif not loop.first
+                      and result.phone.days[loop.index0 - 1] != day - 1 -%}
+                  ,
+                {%- endif -%}
+                {%- if loop.first
+                      or loop.last
+                      or result.phone.days[loop.index0 - 1] != day - 1 -%}
+                  {{ ['M','Tu','W','Th','F','Sa','Su'][day] }}
+                {%- endif -%}
+              {%- endfor -%}
+            {%- endif -%}
+            {%- if has_days and has_hours %} {% endif -%}
+            {%- if has_hours -%}
+              {{ common.timerange(result.phone.start, result.phone.end) }}
+            {%- endif -%}
+            )
+          {%- endif %}
+        {% endif %}
+
+      </div>
+
+      <div class="more-info">
+        <a href="/locations/{{ result.id }}">MORE INFO &#9654;</a>
+      </div>
+    </div>
+    <div class="meals">
+      <table class="timetable">
+      <tr>
+      {% set first = true %}
+      {% for offset in range(7) %}
+        {% set day = offset %}
+        <td class="{{ loop.cycle('odd', 'even') }}
+            {% if offset == 0 %}today{% endif %}
+            {% if result.service_days[day] and first %}next {% set first = false %}{% endif %}">
+          <div class="day-name">
+            {{ ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][day] }}
+          </div>
+          {% for service_time in result.service_days[day] %}
+            <div>{{ common.timerange(service_time.start, service_time.end) }}</div>
+          {% else %}
+            <div class="closed"></div>
+          {% endfor %}
+        </td>
+      {% endfor %}
+      </tr>
+      </table>
+    </div>
+    <div class="props">
+      <ul>
+        {% if result.accessible %}<li>ADA Accessible{% endif %}
+        {% if result.requires_ticket %}<li>Requires Ticket{% endif %}
+        {% if result.requires_local_addr %}<li>Requires Local Address{% endif %}
+        {% if result.requires_church_attend %}<li>Requires Church Attendence{% endif %}
+        {% if result.service_notes %}
+          <li>{{ result.service_notes }}
+        {% endif %}
+      </ul>
+    </div>
+    {% if result.id %}
+      <div class="metadata">
+      Last updated: {{ common.timestamp(result.last_modified) }}
+      <a href="/edit?id={{ result.id }}&service_id={{ result.service_id }}&r={{ request.path_qs|urlencode }}">Edit</a>
+      </div>
+    {% endif %}
+
+
+<script>
+
+function parseLatLng(attr) {
+  var pair = attr.split(',');
+  if (pair.length != 2) return;
+  var lat = parseFloat(pair[0]);
+  if (isNaN(lat)) return;
+  var lng = parseFloat(pair[1]);
+  if (isNaN(lng)) return;
+  return new google.maps.LatLng(lat, lng);
+}
+
+var maps = document.getElementsByClassName('map');
+var directionsService = new google.maps.DirectionsService();
+for (var i = 0; i < maps.length; i++) {
+(function() {
+  var dest = parseLatLng(maps[i].dataset.location);
+  var origin = parseLatLng(maps[i].dataset.origin);
+  if (!dest) return;
+  
+  var map = new google.maps.Map(maps[i], {
+    center: dest,
+    zoom: 15,
+    disableDefaultUI: true,
+    draggable: false,
+    disableDoubleClickZoom: true
+  });
+  new google.maps.Marker({
+    map: map,
+    clickable: false,
+    position: dest
+  });
+  /*var directionsRenderer = new google.maps.DirectionsRenderer({
+    preserveViewport: true,
+    suppressMarkers: true
+  });
+  directionsRenderer.setMap(map);
+  if (origin) {
+    directionsService.route(
+        {
+          origin: origin,
+          destination: dest,
+          travelMode: google.maps.TravelMode.WALKING
+        },
+        function(result, status) {
+          if (status == google.maps.DirectionsStatus.OK) {
+            directionsRenderer.setDirections(result);
+          }
+        });
+  }*/
+})();
+}
+
+</script>
+
+
+
 </div>
 {% endblock %}
 

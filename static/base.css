@@ -85,18 +85,24 @@ body.page .content {
   border: 1px solid #333;
 }
 
+.sections {
+  display: inline-block;
+}
+
 .section-header {
-  border-top: 1px solid #ccc;
   margin-top: 5ex;
   margin-bottom: 1ex;
+  text-align: center;
 }
 
 .section-header span {
   display: inline-block;
-  background-color: #000;
+  background-color: #999;
   color: #fff;
   font-weight: bold;
-  padding: 5px;
+  padding: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 
 .results {
@@ -107,11 +113,13 @@ body.page .content {
 }
 
 .results > li {
+  margin-top: 20px;
   margin-bottom: 5px;
 }
 
 .results h2 {
   margin: 0;
+  margin-top: 48px;
   display: inline-block;
 }
 
@@ -119,13 +127,12 @@ body.page .content {
   margin-bottom: 2ex;
 }
 
-.results .more-info {
-  float: right;
-  font-weight: bold;
+.results .next-time {
+  margin-bottom: 2ex;
 }
 
-.results .more-info img {
-  vertical-align: middle;
+.results .more-info {
+  font-weight: bold;
 }
 
 .results .more-info a {
@@ -133,7 +140,8 @@ body.page .content {
 }
 
 .results .meals {
-  clear: right;
+  clear: both;
+  margin-top: 20px;
 }
 
 .results .timetable {
@@ -141,7 +149,8 @@ body.page .content {
 
 .results .timetable td {
   border-right: 0.5em solid #fff;
-  width: 8em;
+  background-color: #eee; 
+  width: 6em;
   text-align: center;
   vertical-align: top;
   padding-top: 2ex;
@@ -158,18 +167,17 @@ body.page .content {
 }
 
 .results .timetable td.odd {
-  background-color: #eee; 
 }
 
 .results .timetable td.today {
-  width: 16em;
+  background-color: #999;
+  color: #fff;
 }
 
 .results .timetable td.today .closed {
 }
 
 .results .timetable td.next {
-  border: 2px solid #000;
 }
 
 .results .props {
@@ -186,11 +194,26 @@ body.page .content {
   color: #090;
 }
 
-.map {
+.map-container {
   float: left;
-  width: 150px;
-  height: 150px;
+  position: relative;
   margin-right: 2em;
+  margin-bottom: 20px;
+}
+
+.map {
+  width: 22em;
+  height: 150px;
+}
+
+.map-container a {
+  position: absolute;
+  bottom: 0;
+  background-color: #fff;
+  padding: 5px;
+  text-decoration: none;
+  color: #4285f4;
+  font-weight: bold;
 }
 
 body.edit table {
