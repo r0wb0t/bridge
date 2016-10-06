@@ -17,4 +17,5 @@ class LocationHandler(BaseHandler):
       'origin': config.LOCATION_CRITERION.get_geo(self.request),
       'results': results,
       'now': datetime.now() - timedelta(hours=8),
+      'search_context': context,
     })

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% import "common.html" as common with context %}
+{% import "service.html" as service with context %}
 
 {% block title %}Results{% endblock %}
 {% block scripts %}
@@ -49,80 +49,7 @@
 
   <ul class="results">
   {% for result in section_results %}
-    <li>
-    <div class="map-container">
-      <div class="map" 
-           data-location="{{ result.location.lat }},{{ result.location.lon }}"
-           {% if origin %}data-origin="{{ origin.lat }},{{ origin.lon }}"{% endif %}></div>
-      <a href="">DIRECTIONS &#9654;</a>
-    </div>
-    <div class="heading">
-      <h2>
-        {% if result.service_type %}
-          {% if result.service_detail %}
-            {{ result.service_detail}}
-          {% else %}
-            {{ _(result.service_type.name) }}
-          {% endif %} 
-        {% endif %}
-      </h2>
-
-      {% set times_today = result.service_days[search_context.now.weekday()] %}
-      {% if times_today %}
-        <div class="next-time">
-          {{ common.timerange(times_today[0].start, times_today[0].end) }}
-        </div>
-      {% endif %}
-
-      <div>
-        {{ result.name }}
-      </div>
-
-      <div class="more-info">
-        <a href="/locations/{{ result.id }}">MORE INFO &#9654;</a>
-      </div>
-    </div>
-    <div class="meals">
-      <table class="timetable">
-      <tr>
-      {% set first = true %}
-      {% for offset in range(7) %}
-        {% set day = (search_context.now.weekday() + offset) % 7 %}
-        <td class="{{ loop.cycle('odd', 'even') }}
-            {% if offset == 0 %}today{% endif %}
-            {% if result.service_days[day] and first %}next {% set first = false %}{% endif %}">
-          <div class="day-name">
-            {{ ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][day] }}
-          </div>
-          {% for service_time in result.service_days[day] %}
-            <div>{{ common.timerange(service_time.start, service_time.end) }}</div>
-          {% else %}
-            <div class="closed"></div>
-          {% endfor %}
-        </td>
-      {% endfor %}
-      </tr>
-      </table>
-    </div>
-    <div class="props">
-      <ul>
-        {% if result.accessible %}<li>ADA Accessible{% endif %}
-        {% if result.requires_ticket %}<li>Requires Ticket{% endif %}
-        {% if result.requires_local_addr %}<li>Requires Local Address{% endif %}
-        {% if result.requires_church_attend %}<li>Requires Church Attendence{% endif %}
-        {% if result.service_notes %}
-          <li>{{ result.service_notes }}
-        {% endif %}
-      </ul>
-    </div>
-    {% if result.id %}
-      <div class="metadata">
-      Last updated: {{ common.timestamp(result.last_modified) }}
-      <a href="/edit?id={{ result.id }}&service_id={{ result.service_id }}&r={{ request.path_qs|urlencode }}">Edit</a>
-      </div>
-    {% endif %}
-
-    <br clear=both>
+    <li>{{ service.result(result) }}
   {% endfor %}
   </ul>
 {% endfor %}
