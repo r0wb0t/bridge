@@ -29,7 +29,7 @@
 
 <div class="sections">
 
-{% if not results or results[0].section != SearchSection.TODAY %}
+{% if SearchSection.NOW not in sections and SearchSection.TODAY not in sections %}
   <div class="section-header"><span>TODAY</span></div>
   {% if results %}
     No results for today match your query. See below for other options.
@@ -39,8 +39,10 @@
 {% endif %}
 
 {% for section, section_results in results %}
-  {% if section == SearchSection.TODAY %}
-    <div class="section-header"><span>OPEN TODAY</span></div>
+  {% if section == SearchSection.NOW %}
+    <div class="section-header"><span>OPEN NOW</span></div>
+  {% elif section == SearchSection.TODAY %}
+    <div class="section-header"><span>OPEN LATER TODAY</span></div>
   {% else %}
     <div class="section-header"><span>OPEN LATER THIS WEEK</span></div>
   {% endif %}

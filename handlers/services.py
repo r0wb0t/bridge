@@ -86,6 +86,7 @@ def handlers_for_service(criteria, slug):
         'origin': config.LOCATION_CRITERION.get_geo(self.request),
         'options': options,
         'results': groups,
+        'sections': [section.section for section in groups],
         'search_context': context,
       })
 

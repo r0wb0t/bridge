@@ -305,10 +305,11 @@ function changeCategory() {
           <tr><td>{{ day }}</td>
               <td>
                 {% for time in times[day_index] %}
-                  {% do time_order.append(loop.index0) %}
-                  <input type=hidden name={{ sprefix ~ '_day_' ~ loop.index0 }} value="{{ day.lower() }}">
+                  {% set time_index = time_order|length %}
+                  {% do time_order.append(time_index) %}
+                  <input type=hidden name={{ sprefix ~ '_day_' ~ time_index }} value="{{ day.lower() }}">
                   {% if not loop.first %}<br>{% endif %}
-                  {{ time_fields(sprefix, loop.index0, time, removed) }}
+                  {{ time_fields(sprefix, time_index, time, removed) }}
                   <button name="remove_time"
                           value="{{ loop.index0 }}"
                           formaction="#services"

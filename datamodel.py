@@ -214,9 +214,10 @@ class SearchContext(object):
 
 
 class SearchSection(messages.Enum):
-  TODAY = 0
-  TOMORROW = 1
-  LATER = 2  
+  NOW = 0
+  TODAY = 1
+  TOMORROW = 2
+  LATER = 3  
 
 
 class SearchResult(object):
@@ -232,12 +233,15 @@ class SearchResult(object):
   @memoize
   def days(self):
     return set((service_time.day
-        for service_time in self.service_times
+      for service_time in self.service_times
         if service_time.day is not None))
 
   @memoize
   def section(self):
-    if self.context.now.weekday() in self.days():
+    if self.context.now.weekday() in self.service_days:
+      for time in self.service_days[self.context.now.weekday()]:
+        if time.start <= self.context.now.time() <= time.end:
+          return SearchSection.NOW
       return SearchSection.TODAY
     return SearchSection.LATER
 
