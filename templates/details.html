@@ -20,7 +20,10 @@
 
 
 <div class="content">
-<h1>{{ results[0].name }}</h1>
+
+{% set top_result = results[0] %}
+<h1>{{ top_result.name }}</h1>
+{% if top_result.website %}<span class="website">{{ top_result.website }}</span>{% endif %}
 
 <div class="results">
 {% for result in results %}
@@ -34,8 +37,6 @@
       {% endif %} 
     {% endif %}
   </h2>
-      
-  {% if result.website %}<span class="website">{{ result.website }}</span>{% endif %}
 
   {{ service.result(result, show_details=true) }}
 {% endfor %}
