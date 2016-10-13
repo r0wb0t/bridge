@@ -66,6 +66,7 @@ class BaseHandler(webapp2.RequestHandler):
       request=self.request,
       tz=PST,
       utc=UTC,
+      is_user_admin=self.backend.is_user_admin(),
     )
     for k,v in params.iteritems():
       if isinstance(v, Future):

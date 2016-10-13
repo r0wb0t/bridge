@@ -21,9 +21,11 @@
 
 <div class="content">
 
-{% set top_result = results[0] %}
-<h1>{{ top_result.name }}</h1>
-{% if top_result.website %}<span class="website">{{ top_result.website }}</span>{% endif %}
+<div>
+  {% set top_result = results[0] %}
+  <h1>{{ top_result.name }}</h1>
+  {% if top_result.website %}<span class="website">{{ top_result.website }}</span>{% endif %}
+</div>
 
 <div class="results">
 {% for result in results %}
