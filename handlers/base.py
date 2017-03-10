@@ -96,5 +96,16 @@ def admin_required(orig):
       
   return handler_method
 
-# currently everybody needs to be an admin
-login_required = admin_required
+def login_required(orig):
+  def handler_method(self, *args):
+    current_user = users.get_current_user()
+    if current_user is None:
+      if self.request.method == 'GET':
+        uri = self.request.uri
+      else:
+        uri = '/'
+      self.redirect(self.backend.create_login_url(uri))
+    else:
+      orig(self, *args)
+      
+  return handler_method
